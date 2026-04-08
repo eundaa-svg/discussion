@@ -1,4 +1,4 @@
-console.log('[app] === LOADED v_inline1 ===');
+console.log('[app] === LOADED v_copy1 ===');
 
 // === 데모 시드 ===
 var DEMO_SEED = {
@@ -160,7 +160,7 @@ function getActionType(authorSide, targetSide) {
   return authorSide === targetSide ? 'reply' : 'rebut';
 }
 function getActionLabel(type) {
-  return type === 'reply' ? '답글' : '반박';
+  return type === 'reply' ? '답글' : '반론';
 }
 function createFlameBadge(count, side) {
   if (!count || count <= 0) return null;
@@ -367,7 +367,7 @@ function renderHomeStats() {
 
   el.innerHTML =
     '<div class="stat-item"><span class="stat-value">' + totalOpinions + '</span> 명 참여</div>' +
-    '<div class="stat-item"><span class="stat-value">' + totalRebuttals + '</span> 건 반박</div>' +
+    '<div class="stat-item"><span class="stat-value">' + totalRebuttals + '</span> 건 반론</div>' +
     '<div class="stat-item" style="color:#1d4ed8"><span class="stat-value" style="color:#1d4ed8">' + proCount + '</span> 찬성</div>' +
     '<div class="stat-item" style="color:#b91c1c"><span class="stat-value" style="color:#b91c1c">' + conCount + '</span> 반대</div>';
 }
@@ -394,7 +394,7 @@ function renderHotBanner() {
   el.innerHTML =
     '<div class="hot-banner-label">🔥 가장 뜨거운 의견</div>' +
     '<p class="hot-banner-summary">' + escapeHtml(p.summary) + '</p>' +
-    '<div class="hot-banner-meta">' + escapeHtml(hotAuthor) + ' · 반박 ' + hotCount + '건</div>';
+    '<div class="hot-banner-meta">' + escapeHtml(hotAuthor) + ' · 반론 ' + hotCount + '건</div>';
   el.onclick = function() {
     var entry = document.querySelector('.opinion-entry[data-author="' + hotAuthor + '"]');
     if (entry) toggleEntryExpansion(entry, hotAuthor);
@@ -704,7 +704,7 @@ function handleSubmitOpinion() {
     }
 
     if (candidates.length === 0) {
-      showToast('반대편 의견이 아직 없습니다. 홈에서 다른 의견에 자유롭게 반박해보세요.');
+      showToast('반대편 의견이 아직 없습니다. 홈에서 다른 의견에 자유롭게 반론해보세요.');
       loadAndShowHome();
       return;
     }
@@ -837,7 +837,7 @@ function enterPersuadeScreen(opp) {
   if (inp) { inp.value = ''; inp.oninput = function() { if (subBtn) subBtn.disabled = inp.value.trim().length === 0; }; }
   if (subBtn) { subBtn.disabled = true; subBtn.onclick = handleSubmitPersuade; }
   if (skip) skip.onclick = function() {
-    showToast('건너뛰셨습니다. 홈에서 다른 의견에 반박할 수 있습니다.');
+    showToast('건너뛰셨습니다. 홈에서 다른 의견에 반론할 수 있습니다.');
     loadAndShowHome();
   };
 
@@ -874,7 +874,7 @@ function handleSubmitPersuade() {
     });
     return currentInfo.savePayload(mine);
   }).then(function() {
-    showToast('설득 반박이 등록되었습니다!');
+    showToast('설득 반론이 등록되었습니다!');
     currentPersuadeOpponent = null;
     loadAndShowHome();
   }).catch(function(err) {
@@ -1291,14 +1291,14 @@ function renderArenaView() {
   if (!hasMyOpinion) {
     guard.style.display = 'block';
     stage.style.display = 'none';
-    if (guardText) guardText.textContent = '먼저 본인의 의견을 작성하세요. 의견을 써야 반대 진영과 맞설 수 있습니다.';
+    if (guardText) guardText.innerHTML = '먼저 본인의 입장을 작성해주세요.<br>작성 후 상대 입장과 반론을 이어갈 수 있습니다.';
     if (guardBtn) guardBtn.style.display = 'inline-block';
     return;
   }
   if (opponents.length === 0) {
     guard.style.display = 'block';
     stage.style.display = 'none';
-    if (guardText) guardText.textContent = '반대 진영의 의견이 아직 없습니다. 조금 기다렸다가 다시 오세요.';
+    if (guardText) guardText.textContent = '상대 입장의 의견이 아직 없습니다. 조금 기다렸다가 다시 오세요.';
     if (guardBtn) guardBtn.style.display = 'none';
     return;
   }
@@ -1336,7 +1336,7 @@ function renderArenaCards() {
   arenaState.opponents.forEach(function(opp) {
     if (hasRebuttedInArena(opp.nickname)) rebuttedCount++;
   });
-  if (progressEl) progressEl.textContent = '반박 ' + rebuttedCount + ' / ' + total;
+  if (progressEl) progressEl.textContent = '반론 ' + rebuttedCount + ' / ' + total;
 
   container.innerHTML = '';
   arenaState.opponents.forEach(function(opp) {
@@ -1361,7 +1361,7 @@ function renderArenaCards() {
 
     var rebLabel = document.createElement('span');
     rebLabel.className = 'rebutted-label';
-    rebLabel.textContent = '반박됨';
+    rebLabel.textContent = '반론 완료';
 
     card.appendChild(meta);
     card.appendChild(summary);
@@ -1448,7 +1448,7 @@ function submitArenaRebuttal(opp) {
     return loadPayloadsWithSeed(currentInfo);
   }).then(function(payloads) {
     cachedPayloads = payloads || {};
-    showToast('반박이 등록되었습니다.');
+    showToast('반론이 등록되었습니다.');
     closeArenaModal();
     renderArenaCards();
   }).catch(function(err) {
