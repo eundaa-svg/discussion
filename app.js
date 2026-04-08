@@ -969,13 +969,19 @@ function buildThreadNode(entry, rootTargetSide, visualDepth) {
   var body = document.createElement('p');
   body.className = 'thread-body';
 
+  // depth 2 이상 rebuttal → 부모 작성자 @멘션 자동 prepend
+  // 단, content가 이미 "@부모닉네임"으로 시작하면 중복 방지를 위해 스킵
   if (entry.depth >= 2 && r.targetType === 'rebuttal') {
     var parent = findRebuttalById(r.targetId);
     if (parent && parent.author && parent.author !== r.author) {
-      var autoMention = document.createElement('span');
-      autoMention.className = 'mention';
-      autoMention.textContent = '@' + parent.author + ' ';
-      body.appendChild(autoMention);
+      var alreadyMentioned = r.content.trimStart().toLowerCase()
+        .indexOf('@' + parent.author.toLowerCase()) === 0;
+      if (!alreadyMentioned) {
+        var autoMention = document.createElement('span');
+        autoMention.className = 'mention';
+        autoMention.textContent = '@' + parent.author + ' ';
+        body.appendChild(autoMention);
+      }
     }
   }
 
