@@ -601,7 +601,7 @@ function handleSubmitOpinion() {
   if (sub) sub.disabled = true;
 
   currentInfo.savePayload({
-    side: currentInfo.side,
+    side: getMyNormalizedSide(),
     summary: summary,
     reasoning: reasoning,
     createdAt: Date.now(),
@@ -777,7 +777,7 @@ function handleSubmitPersuade() {
   var opp = currentPersuadeOpponent;
   loadPayloadsWithSeed(currentInfo).then(function(payloads) {
     var mine = (payloads && payloads[currentInfo.nickname]) || {
-      side: currentInfo.side,
+      side: getMyNormalizedSide(),
       summary: '',
       reasoning: '',
       createdAt: Date.now(),
@@ -1163,7 +1163,7 @@ function toggleReplyForm(itemEl, parentRebuttal) {
 function submitRebuttal(data) {
   loadPayloadsWithSeed(currentInfo).then(function(payloads) {
     var mine = (payloads && payloads[currentInfo.nickname]) || {
-      side: currentInfo.side,
+      side: getMyNormalizedSide(),
       summary: '',
       reasoning: '',
       createdAt: Date.now(),
