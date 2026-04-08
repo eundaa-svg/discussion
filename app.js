@@ -574,7 +574,7 @@ function toggleCardReplyForm(cardEl, targetAuthor) {
   var form = document.createElement('div');
   form.className = 'inline-reply-form';
   form.innerHTML =
-    '<textarea class="inline-reply-textarea" placeholder="당신의 반론을 남겨보세요..."></textarea>' +
+    '<textarea class="inline-reply-textarea" placeholder="이 의견, 동의하시나요? 아니면 반박해보세요"></textarea>' +
     '<div class="inline-reply-actions">' +
       '<button class="cancel-btn">취소</button>' +
       '<button class="submit-btn" disabled>등록</button>' +
@@ -582,6 +582,13 @@ function toggleCardReplyForm(cardEl, targetAuthor) {
   cardEl.appendChild(form);
   var ta = form.querySelector('.inline-reply-textarea');
   var sub = form.querySelector('.submit-btn');
+
+  // @멘션 자동 삽입
+  var prefix = '@' + targetAuthor + ' ';
+  ta.value = prefix;
+  ta.setSelectionRange(prefix.length, prefix.length);
+  sub.disabled = ta.value.trim().length === 0;
+
   ta.oninput = function() { sub.disabled = ta.value.trim().length === 0; };
   form.querySelector('.cancel-btn').onclick = function(e) { e.stopPropagation(); form.remove(); };
   sub.onclick = function(e) {
@@ -989,7 +996,7 @@ function toggleInlineReply(parentEl, parentRebuttal) {
   var form = document.createElement('div');
   form.className = 'inline-reply-form';
   form.innerHTML =
-    '<textarea class="inline-reply-textarea" placeholder="답글을 남겨보세요..."></textarea>' +
+    '<textarea class="inline-reply-textarea" placeholder="이 의견, 동의하시나요? 아니면 반박해보세요"></textarea>' +
     '<div class="inline-reply-actions">' +
       '<button class="secondary-btn cancel-btn">취소</button>' +
       '<button class="primary-btn submit-btn" disabled>등록</button>' +
@@ -997,6 +1004,13 @@ function toggleInlineReply(parentEl, parentRebuttal) {
   parentEl.appendChild(form);
   var ta = form.querySelector('.inline-reply-textarea');
   var sub = form.querySelector('.submit-btn');
+
+  // @멘션 자동 삽입
+  var prefix = '@' + parentRebuttal.author + ' ';
+  ta.value = prefix;
+  ta.setSelectionRange(prefix.length, prefix.length);
+  sub.disabled = ta.value.trim().length === 0;
+
   ta.oninput = function() { sub.disabled = ta.value.trim().length === 0; };
   form.querySelector('.cancel-btn').onclick = function() { form.remove(); };
   sub.onclick = function() {
