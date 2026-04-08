@@ -130,7 +130,7 @@
     }
 
     /* 근거 블록 */
-    .reason-block { background: #f9fafb; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+    .reason-block { background: rgba(255,255,255,0.6); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
     .reason-label {
       display: inline-block; font-size: 10px; font-weight: 700; color: #71717a;
       background: #e4e4e7; padding: 2px 6px; border-radius: 4px; margin-bottom: 5px;
@@ -138,13 +138,13 @@
     .reason-text { font-size: 13px; line-height: 1.65; color: #374151; margin: 0; white-space: pre-wrap; }
 
     /* 스레드 */
-    .card-thread { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f1f3; }
+    .card-thread { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.06); }
     .card-thread-empty { font-size: 12px; color: #a1a1aa; padding: 4px 0; }
 
     /* 스레드 노드 */
-    .thread-node { padding: 10px 0; border-top: 1px dashed #f1f1f3; }
+    .thread-node { padding: 10px 0; border-top: 1px dashed rgba(0,0,0,0.07); }
     .thread-node:first-child { border-top: none; padding-top: 4px; }
-    .thread-node.is-mine { background: #fafafa; border-radius: 6px; padding: 10px 12px; border-top: none; margin: 4px 0; }
+    .thread-node.is-mine { background: rgba(255,255,255,0.7); border-radius: 6px; padding: 10px 12px; border-top: none; margin: 4px 0; }
     .thread-head { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 4px; flex-wrap: wrap; }
     .thread-head .author { font-weight: 700; color: #27272a; }
     .thread-head .time { color: #a1a1aa; font-size: 11px; margin-left: auto; }
@@ -154,13 +154,13 @@
       background: none; border: none; color: #52525b; font-size: 11px; font-weight: 600;
       padding: 3px 6px; cursor: pointer; border-radius: 4px;
     }
-    .thread-actions .reply-toggle-btn:hover { background: #f4f4f5; color: #18181b; }
-    .thread-children { margin-left: 12px; padding-left: 10px; border-left: 2px solid #e4e4e7; margin-top: 4px; }
-    .thread-children-flat { margin-left: 0; padding-left: 10px; border-left: 2px solid #e4e4e7; }
+    .thread-actions .reply-toggle-btn:hover { background: rgba(255,255,255,0.6); color: #18181b; }
+    .thread-children { margin-left: 12px; padding-left: 10px; border-left: 2px solid rgba(0,0,0,0.1); margin-top: 4px; }
+    .thread-children-flat { margin-left: 0; padding-left: 10px; border-left: 2px solid rgba(0,0,0,0.1); }
     .mention { color: #2563eb; font-weight: 700; font-size: 12px; }
 
     /* 인라인 답글 폼 */
-    .inline-reply-form { margin-top: 10px; padding: 10px; background: #fafafa; border: 1px solid #e4e4e7; border-radius: 6px; }
+    .inline-reply-form { margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.08); border-radius: 6px; }
     .inline-reply-textarea {
       width: 100%; min-height: 60px; padding: 8px 10px; font-size: 12px;
       font-family: inherit; border: 1px solid #d4d4d8; border-radius: 5px; resize: vertical; box-sizing: border-box;
@@ -174,7 +174,7 @@
 
     /* 카드 하단 액션 */
     .card-actions {
-      display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f1f3;
+      display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.06);
     }
     .card-actions .action-btn {
       background: none; border: none; color: #52525b; font-size: 12px; font-weight: 600;
@@ -337,12 +337,12 @@
       background: none; border: none; color: #52525b; font-size: 12px; font-weight: 600;
       padding: 4px 8px; cursor: pointer; border-radius: 4px;
     }
-    .thread-actions .reply-toggle-btn:hover { background: #f4f4f5; color: #18181b; }
+    .thread-actions .reply-toggle-btn:hover { background: rgba(255,255,255,0.6); color: #18181b; }
     .no-more-reply { font-size: 11px; color: #a1a1aa; padding: 4px 0; }
-    .thread-children { margin-left: 16px; margin-top: 4px; padding-left: 14px; border-left: 2px solid #e4e4e7; }
-    .thread-node.is-mine { background: #fafafa; border-radius: 8px; padding: 12px 14px; margin: 6px 0; }
+    .thread-children { margin-left: 16px; margin-top: 4px; padding-left: 14px; border-left: 2px solid rgba(0,0,0,0.1); }
+    .thread-node.is-mine { background: rgba(255,255,255,0.7); border-radius: 8px; padding: 12px 14px; margin: 6px 0; }
     .thread-node.is-mine.depth-1 { border-top: none; }
-    .inline-reply-form { margin: 10px 0 6px 0; padding: 12px; background: #fafafa; border-radius: 8px; border: 1px solid #e4e4e7; }
+    .inline-reply-form { margin: 10px 0 6px 0; padding: 12px; background: rgba(255,255,255,0.8); border-radius: 8px; border: 1px solid rgba(0,0,0,0.08); }
     .inline-reply-textarea {
       width: 100%; min-height: 70px; padding: 10px; font-size: 13px;
       font-family: inherit; border: 1px solid #d4d4d8; border-radius: 6px; resize: vertical; box-sizing: border-box;
