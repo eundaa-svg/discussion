@@ -76,19 +76,14 @@ function loadPayloadsWithSeed(info) {
     if (payloads) {
       for (var k in payloads) {
         var p = payloads[k];
-        if (p && !p.rebuttals) p.rebuttals = [];
-        result[k] = p;
-      }
-    }
-
-    // 데모 모드에서 현재 접속 유저의 side를 URL 파라미터 기준으로 강제 교정
-    if (isDemoMode() && info && info.nickname) {
-      var urlSideCheck = new URLSearchParams(location.search).get('side');
-      if ((urlSideCheck === 'pro' || urlSideCheck === 'con') && result[info.nickname]) {
-        if (result[info.nickname].side !== urlSideCheck) {
-          console.log('[merge] 데모 side 교정:', info.nickname, result[info.nickname].side, '→', urlSideCheck);
-          result[info.nickname] = Object.assign({}, result[info.nickname], { side: urlSideCheck });
+        if (!p) { result[k] = p; continue; }
+        if (!p.rebuttals) p.rebuttals = [];
+        // 데모 모드에서 DEMO_SEED에 있는 사람의 side는 SEED 기준으로 고정
+        if (isDemoMode() && DEMO_SEED[k] && p.side !== DEMO_SEED[k].side) {
+          console.log('[merge] demo side 고정:', k, p.side, '→', DEMO_SEED[k].side);
+          p = Object.assign({}, p, { side: DEMO_SEED[k].side });
         }
+        result[k] = p;
       }
     }
 
@@ -106,12 +101,10 @@ function loadPayloadsWithSeed(info) {
           r[s2] = scanned2[s2];
         }
       }
-      if (info && info.nickname) {
-        var urlSideCheck2 = new URLSearchParams(location.search).get('side');
-        if ((urlSideCheck2 === 'pro' || urlSideCheck2 === 'con') && r[info.nickname]) {
-          if (r[info.nickname].side !== urlSideCheck2) {
-            console.log('[merge] catch 데모 side 교정:', info.nickname, r[info.nickname].side, '→', urlSideCheck2);
-            r[info.nickname] = Object.assign({}, r[info.nickname], { side: urlSideCheck2 });
+      if (isDemoMode()) {
+        for (var fixK in r) {
+          if (DEMO_SEED[fixK] && r[fixK] && r[fixK].side !== DEMO_SEED[fixK].side) {
+            r[fixK] = Object.assign({}, r[fixK], { side: DEMO_SEED[fixK].side });
           }
         }
       }
@@ -620,8 +613,12 @@ function handleSubmitOpinion() {
   var sub = $('submit-btn');
   if (sub) sub.disabled = true;
 
+  var saveSide = (isDemoMode() && DEMO_SEED[currentInfo.nickname])
+    ? DEMO_SEED[currentInfo.nickname].side
+    : currentInfo.side;
+
   currentInfo.savePayload({
-    side: getMyNormalizedSide(),
+    side: saveSide,
     summary: summary,
     reasoning: reasoning,
     createdAt: Date.now(),
@@ -1216,9 +1213,18 @@ function submitRebuttal(data) {
 // === 토론 아레나 ===
 // URL 파라미터 또는 currentInfo.side를 정규화하여 반환 (아레나/설득미션 공용)
 function getMyNormalizedSide() {
+  // 1순위: cachedPayloads에 저장된 본인의 실제 side (고유 입장, 변경 불가)
+  var myPayload = currentInfo && cachedPayloads[currentInfo.nickname];
+  if (myPayload && (myPayload.side === 'pro' || myPayload.side === 'con')) {
+    return myPayload.side;
+  }
+  // 2순위: currentInfo.side (debate-core.js가 서버에서 읽어온 값)
+  var infoSide = currentInfo && typeof currentInfo.side === 'string'
+    ? currentInfo.side.trim().toLowerCase() : '';
+  if (infoSide === 'pro' || infoSide === 'con') return infoSide;
+  // 3순위: URL 파라미터 (최후 fallback)
   var urlSide = new URLSearchParams(location.search).get('side');
-  var raw = (urlSide === 'pro' || urlSide === 'con') ? urlSide : currentInfo.side;
-  return typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+  return (urlSide === 'pro' || urlSide === 'con') ? urlSide : '';
 }
 
 function renderArenaView() {
