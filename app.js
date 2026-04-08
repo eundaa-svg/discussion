@@ -622,12 +622,8 @@ function handleSubmitOpinion() {
   var sub = $('submit-btn');
   if (sub) sub.disabled = true;
 
-  var saveSide = (isDemoMode() && DEMO_SEED[currentInfo.nickname])
-    ? DEMO_SEED[currentInfo.nickname].side
-    : currentInfo.side;
-
   currentInfo.savePayload({
-    side: saveSide,
+    side: getMyNormalizedSide() || currentInfo.side,
     summary: summary,
     reasoning: reasoning,
     createdAt: Date.now(),
@@ -802,7 +798,7 @@ function handleSubmitPersuade() {
   var opp = currentPersuadeOpponent;
   loadPayloadsWithSeed(currentInfo).then(function(payloads) {
     var mine = (payloads && payloads[currentInfo.nickname]) || {
-      side: getMyNormalizedSide(),
+      side: getMyNormalizedSide() || currentInfo.side,
       summary: '',
       reasoning: '',
       createdAt: Date.now(),
@@ -1218,7 +1214,7 @@ function toggleReplyForm(itemEl, parentRebuttal) {
 function submitRebuttal(data) {
   loadPayloadsWithSeed(currentInfo).then(function(payloads) {
     var mine = (payloads && payloads[currentInfo.nickname]) || {
-      side: getMyNormalizedSide(),
+      side: getMyNormalizedSide() || currentInfo.side,
       summary: '',
       reasoning: '',
       createdAt: Date.now(),
@@ -1451,7 +1447,7 @@ function submitArenaRebuttal(opp) {
 
   loadPayloadsWithSeed(currentInfo).then(function(payloads) {
     var mine = (payloads && payloads[currentInfo.nickname]) || {
-      side: getMyNormalizedSide(), summary: '', reasoning: '', createdAt: Date.now(), rebuttals: []
+      side: getMyNormalizedSide() || currentInfo.side, summary: '', reasoning: '', createdAt: Date.now(), rebuttals: []
     };
     if (!mine.rebuttals) mine.rebuttals = [];
     mine.rebuttals.push({
