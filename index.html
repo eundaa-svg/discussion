@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>토론</title>
+  <style>
+    /* 화면 전환 */
+    .screen { display: none !important; }
+    .screen.active { display: block !important; }
+
+    /* 기본 */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, "Pretendard", "Noto Sans KR", sans-serif;
+      background: #f7f7f8;
+      color: #18181b;
+      line-height: 1.5;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
+
+    .page { max-width: 880px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    /* 홈 헤더 */
+    .home-header { margin-bottom: 20px; }
+    .home-title { font-size: 26px; font-weight: 800; line-height: 1.35; margin: 0 0 10px 0; max-width: 680px; }
+    .home-desc { font-size: 14px; color: #71717a; margin: 0; max-width: 640px; }
+
+    /* 홈 통계 바 */
+    .home-stats {
+      display: flex;
+      gap: 16px;
+      padding: 12px 16px;
+      background: #fff;
+      border: 1px solid #e4e4e7;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #52525b;
+      flex-wrap: wrap;
+    }
+    .home-stats .stat-item { display: flex; align-items: center; gap: 6px; }
+    .home-stats .stat-value { font-weight: 700; color: #18181b; }
+
+    /* 뜨거운 토론 배너 */
+    .hot-banner {
+      background: linear-gradient(135deg, #fef3c7, #fee2e2);
+      border: 1px solid #fca5a5;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+    .hot-banner-label { font-size: 11px; font-weight: 700; color: #b91c1c; letter-spacing: 1px; margin-bottom: 6px; }
+    .hot-banner-summary { font-size: 17px; font-weight: 700; margin: 0 0 8px 0; }
+    .hot-banner-meta { font-size: 13px; color: #52525b; }
+
+    /* 홈 컨트롤 */
+    .home-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .write-btn { background: #18181b; color: #fff; border: none; padding: 12px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; }
+    .write-btn:disabled { background: #a1a1aa; }
+
+    /* 찬반 필터 */
+    .side-filter { display: flex; gap: 6px; }
+    .filter-btn {
+      padding: 8px 14px;
+      background: #fff;
+      border: 1px solid #e4e4e7;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #52525b;
+    }
+    .filter-btn.active { background: #18181b; color: #fff; border-color: #18181b; }
+
+    .controls-right { margin-left: auto; display: flex; gap: 8px; }
+    .sort-select, .search-input { padding: 10px 14px; border: 1px solid #e4e4e7; border-radius: 8px; font-size: 14px; background: #fff; }
+    .search-input { min-width: 200px; }
+
+    /* 의견 리스트 */
+    .opinion-list { background: transparent; border: none; display: flex; flex-direction: column; gap: 10px; padding: 0; }
+
+    /* 진영별 카드 엔트리 */
+    .opinion-entry { border-radius: 12px; overflow: hidden; border: 1px solid transparent; }
+    .opinion-entry.pro-entry { background: #eff6ff; border-color: #dbeafe; }
+    .opinion-entry.con-entry { background: #fef2f2; border-color: #fee2e2; }
+
+    .opinion-row {
+      display: grid;
+      grid-template-columns: 110px 1fr auto auto auto;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      cursor: pointer;
+      background: transparent;
+    }
+    .opinion-entry:hover .opinion-row { background: rgba(0,0,0,0.025); }
+    .opinion-author { font-size: 14px; color: #52525b; font-weight: 500; }
+    .opinion-summary { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .opinion-meta { font-size: 12px; color: #a1a1aa; white-space: nowrap; }
+    .opinion-rebcount { font-size: 12px; color: #52525b; background: rgba(0,0,0,0.06); padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+
+    .side-badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #e4e4e7; }
+    .side-badge.pro { background: #3b82f6; color: #fff; }
+    .side-badge.con { background: #ef4444; color: #fff; }
+
+    /* 인라인 확장 */
+    .opinion-expanded { max-height: 0; overflow: hidden; transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1); }
+    .opinion-entry.expanded .opinion-expanded { max-height: 3000px; }
+    .opinion-expanded-inner {
+      padding: 4px 24px 24px 24px;
+      border-top: 1px solid rgba(0,0,0,0.07);
+      margin-top: 4px;
+    }
+    .expanded-reasoning {
+      font-size: 14px; line-height: 1.75; color: #27272a; white-space: pre-wrap;
+      padding: 16px 0; border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .expanded-resp-title {
+      font-size: 13px; font-weight: 700; color: #52525b;
+      margin: 16px 0 10px 0;
+    }
+    .expanded-thread {
+      background: rgba(255,255,255,0.7); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;
+    }
+    .expanded-input { margin-top: 16px; }
+    .expanded-input-divider { font-size: 12px; font-weight: 600; color: #71717a; margin-bottom: 8px; }
+    .expanded-textarea {
+      width: 100%; min-height: 80px; padding: 12px; font-size: 14px; font-family: inherit;
+      border: 1px solid #d4d4d8; border-radius: 8px; resize: vertical; background: #fff; box-sizing: border-box;
+    }
+    .expanded-textarea:focus { outline: none; border-color: #18181b; }
+    .expanded-mine-notice {
+      padding: 20px; text-align: center; font-size: 13px; color: #71717a;
+      background: rgba(255,255,255,0.6); border-radius: 8px; margin-top: 12px;
+    }
+
+    .empty-state { text-align: center; padding: 50px 20px; color: #a1a1aa; font-size: 14px; }
+
+    /* 작성 */
+    .form-card { background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 32px; }
+    .step-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #71717a; text-transform: uppercase; margin-bottom: 6px; }
+    .field-title { font-size: 19px; font-weight: 700; margin: 0 0 6px 0; }
+    .field-desc { font-size: 13px; color: #71717a; margin: 0 0 14px 0; }
+    .field-block { margin-bottom: 26px; }
+    .summary-input { width: 100%; padding: 14px 16px; font-size: 16px; font-family: inherit; border: 1px solid #d4d4d8; border-radius: 8px; }
+    .reasoning-input, .rebuttal-textarea {
+      width: 100%; min-height: 140px; padding: 14px 16px; font-size: 15px;
+      font-family: inherit; border: 1px solid #d4d4d8; border-radius: 8px; resize: vertical;
+    }
+    .summary-input:focus, .reasoning-input:focus, .rebuttal-textarea:focus { outline: none; border-color: #18181b; }
+    .write-hint { font-size: 13px; color: #71717a; background: #f4f4f5; padding: 10px 14px; border-radius: 6px; margin-top: 8px; }
+
+    .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+    .secondary-btn { background: #fff; color: #18181b; border: 1px solid #d4d4d8; padding: 10px 18px; border-radius: 8px; font-size: 14px; }
+    .primary-btn { background: #18181b; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; }
+    .primary-btn:disabled { background: #a1a1aa; }
+
+    /* 본인 뱃지 */
+    .me-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #f4f4f5;
+      color: #71717a;
+      border: 1px solid #e4e4e7;
+      margin-left: 6px;
+      letter-spacing: 0.3px;
+    }
+    .opinion-row.is-mine { padding-left: 60px; position: relative; }
+    .opinion-row.is-mine .flame-badge { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); }
+    .detail-card.is-mine { border-left: 4px solid #d4d4d8; background: #fafafa; }
+    .rebuttal-item.is-mine { background: #fafafa; border-radius: 8px; padding: 14px 16px; margin: 8px -4px; }
+    .rebuttal-item.is-mine + .rebuttal-item { border-top: none; }
+    .action-label {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+    .action-label.reply { background: #f4f4f5; color: #71717a; }
+    .action-label.rebut { background: #fee2e2; color: #b91c1c; }
+
+    /* 뽑기 화면 */
+    .draw-page { text-align: center; padding-top: 120px; }
+    .draw-label {
+      display: inline-block;
+      background: #18181b;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 5px 14px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+    }
+    .draw-title { font-size: 22px; font-weight: 800; margin: 0 0 32px 0; }
+    .draw-hint { font-size: 13px; color: #a1a1aa; margin-top: 28px; }
+    .draw-candidates { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; min-height: 100px; }
+    .draw-card {
+      width: 120px;
+      padding: 14px 10px;
+      background: #fff;
+      border: 2px solid #e4e4e7;
+      border-radius: 10px;
+      transition: all 0.25s ease;
+      opacity: 0.5;
+    }
+    .draw-card .draw-card-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; color: #27272a; }
+    .draw-card .draw-card-side { font-size: 11px; color: #71717a; }
+    .draw-card.scanning { opacity: 1; border-color: #18181b; transform: translateY(-4px); }
+    .draw-card.selected {
+      opacity: 1;
+      border-color: #dc2626;
+      background: #fef2f2;
+      transform: scale(1.08) translateY(-4px);
+      box-shadow: 0 8px 20px rgba(220, 38, 38, 0.15);
+    }
+    .draw-card.faded { opacity: 0.25; }
+    @media (max-width: 640px) {
+      .draw-card { width: 90px; padding: 10px 6px; }
+      .draw-card .draw-card-name { font-size: 12px; }
+    }
+
+    /* 미션 화면 */
+    .mission-label {
+      display: inline-block;
+      background: #dc2626;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 5px 12px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .mission-title { font-size: 24px; font-weight: 800; margin: 0 0 8px 0; }
+    .mission-desc { font-size: 14px; color: #71717a; margin: 0 0 24px 0; max-width: 600px; }
+
+    /* 상세 */
+    .back-link { display: inline-block; margin-bottom: 20px; font-size: 14px; color: #52525b; background: none; border: none; padding: 0; }
+    .detail-card { background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 30px; margin-bottom: 24px; }
+    .detail-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .detail-author { font-weight: 600; font-size: 14px; }
+    .detail-summary { font-size: 23px; font-weight: 800; line-height: 1.35; margin: 0 0 18px 0; }
+    .detail-reasoning { font-size: 15px; line-height: 1.75; color: #27272a; white-space: pre-wrap; margin: 0; padding-top: 18px; border-top: 1px solid #f1f1f3; }
+
+    /* 반박 입력 */
+    .rebuttal-input-card { background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    .rebuttal-input-title { font-size: 15px; font-weight: 700; margin: 0 0 12px 0; }
+    .rebuttal-input-disabled { color: #a1a1aa; font-size: 13px; padding: 14px; background: #fafafa; border-radius: 8px; text-align: center; }
+
+    /* home-desc 강조 */
+    .home-desc strong { color: #18181b; font-weight: 700; }
+
+    /* 불꽃 배지 */
+    .flame-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 40px; flex-shrink: 0; pointer-events: none;
+    }
+    .flame-badge svg { width: 100%; height: 100%; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); }
+    .flame-count {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -28%);
+      color: #fff; font-size: 11px; font-weight: 800; line-height: 1;
+      letter-spacing: -0.3px; pointer-events: none;
+    }
+
+    /* 반박 목록 */
+    .rebuttals-section { background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 26px; }
+    .rebuttals-title { font-size: 15px; font-weight: 700; margin: 0 0 16px 0; }
+
+    /* 스레드 노드 */
+    .thread-node { padding: 14px 0; }
+    .thread-node.depth-1 { border-top: 1px solid #f1f1f3; }
+    .thread-node.depth-1:first-child { border-top: none; padding-top: 0; }
+    .thread-head { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 6px; flex-wrap: wrap; }
+    .thread-head .author { font-weight: 700; color: #27272a; }
+    .thread-head .time { color: #a1a1aa; font-size: 12px; margin-left: auto; }
+    .thread-body { font-size: 14px; line-height: 1.65; color: #27272a; margin: 0 0 8px 0; white-space: pre-wrap; }
+    .thread-actions { display: flex; gap: 10px; margin-bottom: 4px; }
+    .thread-actions .reply-toggle-btn {
+      background: none; border: none; color: #52525b; font-size: 12px; font-weight: 600;
+      padding: 4px 8px; cursor: pointer; border-radius: 4px;
+    }
+    .thread-actions .reply-toggle-btn:hover { background: #f4f4f5; color: #18181b; }
+    .no-more-reply { font-size: 11px; color: #a1a1aa; padding: 4px 0; }
+    .thread-children { margin-left: 16px; margin-top: 4px; padding-left: 14px; border-left: 2px solid #e4e4e7; }
+    .thread-node.is-mine { background: #fafafa; border-radius: 8px; padding: 12px 14px; margin: 6px 0; }
+    .thread-node.is-mine.depth-1 { border-top: none; }
+    .inline-reply-form { margin: 10px 0 6px 0; padding: 12px; background: #fafafa; border-radius: 8px; border: 1px solid #e4e4e7; }
+    .inline-reply-textarea {
+      width: 100%; min-height: 70px; padding: 10px; font-size: 13px;
+      font-family: inherit; border: 1px solid #d4d4d8; border-radius: 6px; resize: vertical; box-sizing: border-box;
+    }
+    .inline-reply-textarea:focus { outline: none; border-color: #18181b; }
+    .inline-reply-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px; }
+    .inline-reply-actions .secondary-btn, .inline-reply-actions .primary-btn { padding: 6px 14px; font-size: 12px; }
+
+    /* 상태 */
+    .status-screen { text-align: center; padding: 80px 20px; color: #71717a; }
+
+    /* 토스트 */
+    .toast {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: #18181b; color: #fff; padding: 12px 20px; border-radius: 8px;
+      font-size: 14px; z-index: 999; opacity: 0; transition: opacity 0.2s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+
+    /* === 뷰 전환 칩 === */
+    .view-chips { display: flex; gap: 8px; margin-bottom: 24px; align-items: center; }
+    .view-chip {
+      padding: 10px 20px; font-size: 14px; font-weight: 600;
+      background: #fff; color: #71717a; border: 1px solid #e4e4e7;
+      border-radius: 999px; cursor: pointer; transition: all 0.2s ease;
+    }
+    .view-chip:hover { border-color: #18181b; color: #18181b; }
+    .view-chip.active { background: #18181b; color: #fff; border-color: #18181b; }
+    .home-view { animation: view-fadein 0.25s ease; }
+    @keyframes view-fadein {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* === 아레나 가드 === */
+    .arena-guard { text-align: center; padding: 80px 20px; background: #fff; border-radius: 12px; border: 1px solid #e4e4e7; }
+    .arena-guard-text { font-size: 15px; color: #52525b; margin: 0 0 20px 0; }
+
+    /* === 아레나 스테이지 === */
+    .arena-stage { padding: 20px 0; }
+    .arena-progress-bar { display: flex; justify-content: center; margin-bottom: 30px; }
+    .arena-progress-text {
+      font-size: 13px; color: #52525b; background: #fff;
+      padding: 8px 18px; border-radius: 999px; border: 1px solid #e4e4e7; font-weight: 600;
+    }
+    .arena-my-card {
+      background: #fff; border: 2px solid #3b82f6; border-radius: 16px;
+      padding: 22px 28px; text-align: center;
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.1), 0 10px 30px rgba(0,0,0,0.06);
+      max-width: 480px; margin: 0 auto 24px auto; position: relative;
+    }
+    .arena-my-card.con-side { border-color: #dc2626; box-shadow: 0 0 0 4px rgba(220,38,38,0.1), 0 10px 30px rgba(0,0,0,0.06); }
+    .arena-my-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #71717a; margin-bottom: 6px; text-transform: uppercase; }
+    .arena-my-nickname { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+    .arena-my-summary { font-size: 14px; color: #52525b; line-height: 1.5; }
+    .arena-divider {
+      text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+      color: #a1a1aa; text-transform: uppercase; margin: 30px 0 16px 0; position: relative;
+    }
+    .arena-divider::before, .arena-divider::after {
+      content: ''; position: absolute; top: 50%; width: 80px; height: 1px; background: #e4e4e7;
+    }
+    .arena-divider::before { left: 50%; margin-left: -160px; }
+    .arena-divider::after  { left: 50%; margin-left: 80px; }
+    .arena-opponents {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px; max-width: 880px; margin: 0 auto;
+    }
+    .arena-card {
+      background: #fff; border: 2px solid #e4e4e7; border-radius: 12px;
+      padding: 18px; cursor: pointer; position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .arena-card:hover:not(.rebutted) {
+      transform: translateY(-4px); border-color: #18181b;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+    }
+    .arena-card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+    .arena-card-author { font-weight: 700; color: #27272a; }
+    .arena-card-summary {
+      font-size: 14px; font-weight: 600; line-height: 1.5; color: #18181b; margin: 0;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .arena-card.rebutted { opacity: 0.4; cursor: default; background: #fafafa; }
+    .arena-card .rebutted-label {
+      display: none; position: absolute; top: 10px; right: 10px;
+      background: #18181b; color: #fff; font-size: 10px; font-weight: 700;
+      padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px;
+    }
+    .arena-card.rebutted .rebutted-label { display: inline-block; }
+    .arena-empty {
+      text-align: center; padding: 30px; font-size: 14px; color: #52525b;
+      background: #fff; border-radius: 12px; margin-top: 20px; border: 1px solid #e4e4e7;
+    }
+
+    /* === 이의 있음 말풍선 === */
+    .objection-overlay {
+      position: fixed; inset: 0; display: none;
+      align-items: center; justify-content: center;
+      z-index: 2000; background: rgba(0,0,0,0.35); pointer-events: none;
+    }
+    .objection-overlay.show { display: flex; animation: objection-fadein 0.2s ease; }
+    .objection-overlay.hide { animation: objection-fadeout 0.3s ease forwards; }
+    .objection-bubble {
+      background: #fff; border: 5px solid #dc2626; border-radius: 16px;
+      padding: 36px 72px; box-shadow: 0 20px 60px rgba(220,38,38,0.35);
+      animation: objection-pop 0.5s cubic-bezier(.2,1.8,.3,1) forwards; position: relative;
+    }
+    .objection-bubble::after {
+      content: ''; position: absolute; bottom: -18px; left: 40px;
+      width: 0; height: 0;
+      border-left: 22px solid transparent; border-right: 6px solid transparent;
+      border-top: 22px solid #dc2626;
+    }
+    .objection-text { font-size: 52px; font-weight: 900; color: #dc2626; letter-spacing: -1px; white-space: nowrap; }
+    @keyframes objection-fadein { from { background: rgba(0,0,0,0); } to { background: rgba(0,0,0,0.35); } }
+    @keyframes objection-fadeout { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes objection-pop {
+      0%   { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+      60%  { transform: scale(1.1) rotate(2deg); opacity: 1; }
+      75%  { transform: scale(0.98) rotate(-1deg); }
+      100% { transform: scale(1) rotate(-3deg); opacity: 1; }
+    }
+
+    /* === 아레나 반박 모달 === */
+    .arena-modal { display: none; position: fixed; inset: 0; z-index: 1500; align-items: center; justify-content: center; }
+    .arena-modal.show { display: flex; }
+    .arena-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
+    .arena-modal-card {
+      position: relative; background: #fff; border-radius: 16px; padding: 32px;
+      max-width: 560px; width: 90%; max-height: 85vh; overflow-y: auto; z-index: 1;
+      border-left: 6px solid #d4d4d8; animation: modal-in 0.3s ease;
+    }
+    @keyframes modal-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .arena-modal-close {
+      position: absolute; top: 14px; right: 14px;
+      background: none; border: none; font-size: 18px; color: #71717a; cursor: pointer; padding: 4px 8px;
+    }
+    .arena-modal-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 13px; }
+    .arena-modal-summary { font-size: 20px; font-weight: 800; margin: 0 0 12px 0; line-height: 1.4; }
+    .arena-modal-reasoning {
+      font-size: 14px; color: #52525b; line-height: 1.6; margin: 0 0 20px 0;
+      padding-bottom: 16px; border-bottom: 1px solid #f1f1f3; white-space: pre-wrap;
+    }
+
+    @media (max-width: 640px) {
+      .page { padding: 24px 16px 60px; }
+      .home-title { font-size: 21px; }
+      .opinion-row { grid-template-columns: 1fr auto auto; gap: 8px; }
+      .opinion-author, .opinion-meta { display: none; }
+      .controls-right { width: 100%; }
+      .search-input { flex: 1; min-width: 0; }
+      .form-card, .detail-card, .rebuttals-section, .rebuttal-input-card { padding: 18px; }
+      .side-filter { flex-wrap: wrap; }
+      .objection-text { font-size: 36px; }
+      .objection-bubble { padding: 24px 40px; }
+      .arena-opponents { grid-template-columns: 1fr; }
+      .arena-divider::before { margin-left: -140px; width: 60px; }
+      .arena-divider::after  { margin-left: 80px; width: 60px; }
+    }
+
+    /* === 정보 버튼 === */
+    .info-btn {
+      margin-left: auto; width: 32px; height: 32px; border-radius: 50%;
+      background: #fff; border: 1px solid #e4e4e7; color: #71717a;
+      font-size: 14px; font-weight: 700; font-style: italic;
+      cursor: pointer; font-family: Georgia, serif; transition: all 0.2s ease;
+    }
+    .info-btn:hover { background: #18181b; color: #fff; border-color: #18181b; }
+
+    /* === 도움말 모달 === */
+    .help-modal { display: none; position: fixed; inset: 0; z-index: 1800; align-items: center; justify-content: center; }
+    .help-modal.show { display: flex; }
+    .help-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
+    .help-card {
+      position: relative; background: #fff; border-radius: 16px; padding: 40px 36px 32px;
+      max-width: 620px; width: 92%; max-height: 88vh; overflow-y: auto; z-index: 1;
+      animation: modal-in 0.3s ease;
+    }
+    .help-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 18px; color: #71717a; cursor: pointer; }
+    .help-title { font-size: 24px; font-weight: 800; margin: 0 0 6px 0; }
+    .help-subtitle { font-size: 14px; color: #71717a; margin: 0 0 28px 0; }
+    .help-section { margin-bottom: 26px; padding-bottom: 22px; border-bottom: 1px solid #f1f1f3; }
+    .help-section-label {
+      display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      color: #71717a; background: #f4f4f5; padding: 3px 8px; border-radius: 4px; margin-bottom: 8px;
+    }
+    .help-section-title { font-size: 18px; font-weight: 800; margin: 0 0 8px 0; }
+    .help-section-desc { font-size: 14px; color: #52525b; line-height: 1.65; margin: 0 0 12px 0; }
+    .help-list { margin: 0; padding-left: 18px; font-size: 13px; color: #52525b; line-height: 1.75; }
+    .help-list li { margin-bottom: 2px; }
+    .help-flow { background: #fafafa; border-radius: 12px; padding: 20px; margin: 10px 0 24px 0; }
+    .help-flow-title { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #71717a; text-transform: uppercase; text-align: center; margin-bottom: 16px; }
+    .help-flow-diagram { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .flow-step { flex: 1; text-align: center; }
+    .flow-num {
+      width: 34px; height: 34px; border-radius: 50%; background: #18181b; color: #fff;
+      font-size: 14px; font-weight: 800; display: inline-flex; align-items: center;
+      justify-content: center; margin-bottom: 8px;
+    }
+    .flow-text { font-size: 13px; font-weight: 700; color: #18181b; line-height: 1.35; }
+    .flow-text span { display: block; font-size: 11px; font-weight: 500; color: #71717a; margin-top: 2px; }
+    .flow-arrow { color: #a1a1aa; font-size: 18px; font-weight: 700; flex: 0 0 auto; }
+    .help-footer { text-align: right; }
+    .help-footer .primary-btn { min-width: 120px; }
+    @media (max-width: 640px) {
+      .help-card { padding: 28px 22px 22px; }
+      .help-flow-diagram { flex-direction: column; gap: 14px; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="screen-status" class="screen active">
+    <div class="status-screen">로딩 중...</div>
+  </div>
+
+  <!-- 홈 -->
+  <div id="screen-home" class="screen">
+    <div class="page">
+      <header class="home-header">
+        <h1 class="home-title" id="home-title">토론 주제</h1>
+        <p class="home-desc">이 사이트는 두 가지 모드로 토론할 수 있습니다. <strong>전체 보기</strong>에서는 찬반 의견을 한눈에 살펴보고 답글로 이어가며, <strong>토론 아레나</strong>에서는 반대편 의견을 하나씩 직접 반박하여 상대를 설득하세요.</p>
+      </header>
+
+      <!-- 뷰 전환 칩 -->
+      <div class="view-chips">
+        <button class="view-chip active" data-view="all">전체 보기</button>
+        <button class="view-chip" data-view="arena">토론 아레나</button>
+        <button class="info-btn" id="info-btn" aria-label="사용법 보기">i</button>
+      </div>
+
+      <!-- 뷰 1: 전체 보기 -->
+      <div class="home-view" id="view-all">
+        <div id="home-stats" class="home-stats"></div>
+        <div id="hot-banner" class="hot-banner" style="display:none;"></div>
+        <div class="home-controls">
+          <button id="write-btn" class="write-btn">내 의견 쓰기</button>
+          <div id="side-filter" class="side-filter">
+            <button class="filter-btn active" data-filter="all">전체</button>
+            <button class="filter-btn" data-filter="pro">찬성</button>
+            <button class="filter-btn" data-filter="con">반대</button>
+          </div>
+          <div class="controls-right">
+            <select id="sort-select" class="sort-select">
+              <option value="latest">최신순</option>
+              <option value="oldest">오래된순</option>
+              <option value="hot">반박 많은 순</option>
+            </select>
+            <input id="search-input" class="search-input" type="text" placeholder="검색...">
+          </div>
+        </div>
+        <div id="opinion-list" class="opinion-list">
+          <div class="empty-state">아직 의견이 없습니다.</div>
+        </div>
+      </div>
+
+      <!-- 뷰 2: 토론 아레나 -->
+      <div class="home-view" id="view-arena" style="display:none;">
+        <div class="arena-guard" id="arena-guard" style="display:none;">
+          <p class="arena-guard-text" id="arena-guard-text"></p>
+          <button class="primary-btn" id="arena-guard-btn" style="display:none;">의견 작성하기</button>
+        </div>
+        <div class="arena-stage" id="arena-stage" style="display:none;">
+          <div class="arena-progress-bar">
+            <span class="arena-progress-text" id="arena-progress">반박 0 / 0</span>
+          </div>
+          <div class="arena-my-card" id="arena-my-card">
+            <div class="arena-my-label">나의 주장</div>
+            <div class="arena-my-nickname" id="arena-my-nickname"></div>
+            <div class="arena-my-summary" id="arena-my-summary"></div>
+          </div>
+          <div class="arena-divider">반대 진영 의견</div>
+          <div class="arena-opponents" id="arena-opponents"></div>
+          <div class="arena-empty" id="arena-empty" style="display:none;">
+            모든 반대 의견에 반박을 마쳤습니다.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 이의 있음 말풍선 오버레이 -->
+    <div class="objection-overlay" id="objection-overlay">
+      <div class="objection-bubble">
+        <span class="objection-text">이의 있음!</span>
+      </div>
+    </div>
+
+    <!-- 아레나 반박 모달 -->
+    <div class="arena-modal" id="arena-modal">
+      <div class="arena-modal-backdrop"></div>
+      <div class="arena-modal-card">
+        <button class="arena-modal-close" id="arena-modal-close">✕</button>
+        <div class="arena-modal-meta">
+          <span id="arena-modal-author"></span>
+          <span class="side-badge" id="arena-modal-side"></span>
+        </div>
+        <h2 class="arena-modal-summary" id="arena-modal-summary"></h2>
+        <p class="arena-modal-reasoning" id="arena-modal-reasoning"></p>
+        <textarea id="arena-modal-input" class="rebuttal-textarea" placeholder="당신의 생각을 자유롭게 남겨보세요..."></textarea>
+        <div class="form-actions">
+          <button class="secondary-btn" id="arena-modal-cancel">취소</button>
+          <button class="primary-btn" id="arena-modal-submit" disabled>반박 제출</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 작성 -->
+  <div id="screen-write" class="screen">
+    <div class="page">
+      <button class="back-link" data-back="home">← 돌아가기</button>
+      <div class="form-card">
+        <div class="field-block">
+          <div class="step-label">STEP 1</div>
+          <h2 class="field-title">한 줄 요약</h2>
+          <p class="field-desc">당신의 주장을 한 문장으로 표현하세요.</p>
+          <input id="summary-input" class="summary-input" type="text" placeholder="예: 회사 선배 결혼식 축의금은 10만원 이상이 적절하다">
+        </div>
+        <div class="field-block">
+          <div class="step-label">STEP 2</div>
+          <h2 class="field-title">근거 / 논거</h2>
+          <p class="field-desc">왜 그렇게 생각하는지 구체적으로 작성하세요.</p>
+          <textarea id="reasoning-input" class="reasoning-input" placeholder="예: 첫째, 사회적 관계에서..."></textarea>
+          <p class="write-hint">제출 후 반대편 한 명과 매칭되어 설득 미션이 시작됩니다.</p>
+        </div>
+        <div class="form-actions">
+          <button class="secondary-btn" data-back="home">취소</button>
+          <button id="submit-btn" class="primary-btn" disabled>제출</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 뽑기 화면 -->
+  <div id="screen-draw" class="screen">
+    <div class="page draw-page">
+      <div class="draw-label">MATCHING</div>
+      <h2 class="draw-title" id="draw-title">반대편 상대를 찾고 있습니다</h2>
+      <div class="draw-candidates" id="draw-candidates"></div>
+      <p class="draw-hint" id="draw-hint">잠시만 기다려주세요</p>
+    </div>
+  </div>
+
+  <!-- 설득 미션 -->
+  <div id="screen-persuade" class="screen">
+    <div class="page">
+      <div class="mission-label">설득 미션</div>
+      <h1 class="mission-title">이 사람을 논리로 설득하세요</h1>
+      <p class="mission-desc">당신과 정반대 입장의 의견이 무작위로 배정되었습니다. 반박하여 이 사람의 생각을 흔들어보세요.</p>
+
+      <div class="detail-card">
+        <div class="detail-meta">
+          <span class="detail-author" id="persuade-author"></span>
+          <span class="side-badge" id="persuade-side"></span>
+        </div>
+        <h2 class="detail-summary" id="persuade-summary"></h2>
+        <p class="detail-reasoning" id="persuade-reasoning"></p>
+      </div>
+
+      <div class="rebuttal-input-card">
+        <h3 class="rebuttal-input-title">설득 반박 작성</h3>
+        <textarea id="persuade-input" class="rebuttal-textarea" placeholder="상대의 논리를 꺾을 반박을 작성하세요..."></textarea>
+        <div class="form-actions">
+          <button id="persuade-skip" class="secondary-btn">건너뛰기</button>
+          <button id="persuade-submit" class="primary-btn" disabled>설득 반박 제출</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="toast" class="toast"></div>
+
+  <!-- 도움말 모달 -->
+  <div class="help-modal" id="help-modal">
+    <div class="help-backdrop" id="help-backdrop"></div>
+    <div class="help-card">
+      <button class="help-close" id="help-close">✕</button>
+      <h2 class="help-title">어떻게 토론하나요?</h2>
+      <p class="help-subtitle">두 가지 방식으로 토론에 참여할 수 있습니다.</p>
+
+      <div class="help-section">
+        <div class="help-section-label">MODE 1</div>
+        <h3 class="help-section-title">전체 보기</h3>
+        <p class="help-section-desc">찬성과 반대의 모든 의견이 한 리스트에 섞여서 보입니다. 카드를 클릭하면 해당 의견의 상세 화면으로 이동하여 답글과 반박 스레드를 볼 수 있고, 직접 답글이나 반박을 달 수 있습니다.</p>
+        <ul class="help-list">
+          <li>의견 검색, 정렬, 찬반 필터링 가능</li>
+          <li>각 의견의 상세 화면에서 답글/반박 작성</li>
+          <li>같은 진영이면 "답글", 반대 진영이면 "반박"</li>
+          <li>재반박 1단계까지 가능</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <div class="help-section-label">MODE 2</div>
+        <h3 class="help-section-title">토론 아레나</h3>
+        <p class="help-section-desc">내가 중심에 있고 반대 진영의 의견들이 주변을 둘러쌉니다. 카드를 클릭하면 "이의 있음!" 연출과 함께 반박 모달이 열립니다. 반대편을 하나씩 공격하듯 빠르게 반박할 수 있는 집중 모드입니다.</p>
+        <ul class="help-list">
+          <li>본인 의견 작성 후에만 입장 가능</li>
+          <li>반대 진영 의견만 표시</li>
+          <li>반박 완료한 카드는 흐려지며 "반박됨" 표시</li>
+          <li>진행도(반박 N / 전체 N) 실시간 집계</li>
+        </ul>
+      </div>
+
+      <div class="help-flow">
+        <div class="help-flow-title">전체 흐름</div>
+        <div class="help-flow-diagram">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div class="flow-text">내 의견 작성<br><span>한 줄 요약 + 근거</span></div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div class="flow-text">설득 미션<br><span>반대편 1명과 자동 매칭</span></div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div class="flow-text">자유 토론<br><span>전체 보기 / 토론 아레나</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-footer">
+        <button class="primary-btn" id="help-got-it">알겠습니다</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://debate-md2-2603.web.app/debate-core.js" data-architect-id="dan"></script>
+  <script src="app.js?v=inline1"></script>
+</body>
+</html>
