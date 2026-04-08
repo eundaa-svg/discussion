@@ -259,17 +259,12 @@ function bindGlobalEvents() {
   // 설득 미션
   var persuadeInp = $('persuade-input');
   var persuadeSubmit = $('persuade-submit');
-  var persuadeSkip = $('persuade-skip');
   if (persuadeInp && persuadeSubmit) {
     persuadeInp.oninput = function() {
       persuadeSubmit.disabled = persuadeInp.value.trim().length === 0;
     };
   }
   if (persuadeSubmit) persuadeSubmit.onclick = handleSubmitPersuade;
-  if (persuadeSkip) persuadeSkip.onclick = function() {
-    showToast('설득 미션을 건너뛰었습니다.');
-    loadAndShowHome();
-  };
 
   // (정렬 토글 제거됨 — 오래된 순 고정)
 
@@ -655,7 +650,6 @@ function handleSubmitOpinion() {
     }
 
     if (candidates.length === 0) {
-      showToast('반대편 의견이 아직 없습니다. 홈에서 다른 의견에 자유롭게 반론해보세요.');
       loadAndShowHome();
       return;
     }
@@ -779,18 +773,12 @@ function enterPersuadeScreen(opp) {
   var reaEl = document.getElementById('persuade-reasoning');
   var inp = document.getElementById('persuade-input');
   var subBtn = document.getElementById('persuade-submit');
-  var skip = document.getElementById('persuade-skip');
-
   if (authEl) authEl.textContent = opp.nickname;
   if (sideEl) setSideBadge(sideEl, opp.side);
   if (sumEl) sumEl.textContent = opp.summary || '';
   if (reaEl) reaEl.textContent = opp.reasoning || '';
   if (inp) { inp.value = ''; inp.oninput = function() { if (subBtn) subBtn.disabled = inp.value.trim().length === 0; }; }
   if (subBtn) { subBtn.disabled = true; subBtn.onclick = handleSubmitPersuade; }
-  if (skip) skip.onclick = function() {
-    showToast('건너뛰셨습니다. 홈에서 다른 의견에 반론할 수 있습니다.');
-    loadAndShowHome();
-  };
 
   console.log('[persuade] showScreen(screen-persuade) 호출');
   showScreen('screen-persuade');
