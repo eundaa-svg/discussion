@@ -1,4 +1,4 @@
-console.log('[app] === LOADED v_yt1 ===');
+console.log('[app] === LOADED v_ui1 ===');
 
 // === 데모 시드 ===
 var DEMO_SEED = {
@@ -507,16 +507,12 @@ function buildOpinionCard(it) {
 
   // 근거 블록
   var reasons = splitReasons(it.reasoning);
-  reasons.forEach(function(r, idx) {
+  reasons.forEach(function(r) {
     var block = document.createElement('div');
     block.className = 'reason-block';
-    var label = document.createElement('span');
-    label.className = 'reason-label';
-    label.textContent = '근거 ' + (idx + 1);
     var text = document.createElement('p');
     text.className = 'reason-text';
     text.textContent = r;
-    block.appendChild(label);
     block.appendChild(text);
     card.appendChild(block);
   });
