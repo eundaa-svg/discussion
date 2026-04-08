@@ -225,6 +225,12 @@ window.DebateCore.onReady(function(info) {
   var titleEl = $('home-title');
   if (titleEl) titleEl.textContent = info.title || '오늘의 토론';
 
+  // 아키텍트/아젠다세터는 읽기 전용 (의견 쓰기 버튼 숨김)
+  if (info.role !== 'participant') {
+    var writeBtn = document.getElementById('write-btn');
+    if (writeBtn) writeBtn.style.display = 'none';
+  }
+
   bindGlobalEvents();
   loadAndShowHome();
 });
