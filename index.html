@@ -46,12 +46,11 @@
 
     /* 뜨거운 토론 배너 */
     .hot-banner {
-      background: linear-gradient(135deg, #fef3c7, #fee2e2);
-      border: 1px solid #fca5a5;
       border-radius: 12px;
       padding: 20px 24px;
       margin-bottom: 20px;
       cursor: pointer;
+      border: 1px solid transparent;
     }
     .hot-banner-label { font-size: 11px; font-weight: 700; color: #b91c1c; letter-spacing: 1px; margin-bottom: 6px; }
     .hot-banner-summary { font-size: 17px; font-weight: 700; margin: 0 0 8px 0; }
@@ -74,10 +73,6 @@
       color: #52525b;
     }
     .filter-btn.active { background: #18181b; color: #fff; border-color: #18181b; }
-
-    .controls-right { margin-left: auto; display: flex; gap: 8px; }
-    .sort-select, .search-input { padding: 10px 14px; border: 1px solid #e4e4e7; border-radius: 8px; font-size: 14px; background: #fff; }
-    .search-input { min-width: 200px; }
 
     .side-badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #e4e4e7; }
     .side-badge.pro { background: #3b82f6; color: #fff; }
@@ -498,8 +493,7 @@
       .home-title { font-size: 21px; }
       .opinion-row { grid-template-columns: 1fr auto auto; gap: 8px; }
       .opinion-author, .opinion-meta { display: none; }
-      .controls-right { width: 100%; }
-      .search-input { flex: 1; min-width: 0; }
+
       .form-card, .detail-card, .rebuttals-section, .rebuttal-input-card { padding: 18px; }
       .side-filter { flex-wrap: wrap; }
       .objection-text { font-size: 36px; }
@@ -571,7 +565,7 @@
     <div class="page">
       <header class="home-header">
         <h1 class="home-title" id="home-title">토론 주제</h1>
-        <p class="home-desc">이 사이트는 두 가지 모드로 토론할 수 있습니다.<br><strong>전체 보기</strong>에서 다양한 의견을 살펴보고,<br><strong>토론 아레나</strong>에서 상대 입장과 반론을 펼쳐보세요!</p>
+        <p class="home-desc">이 사이트는 두 가지 모드로 토론할 수 있습니다.<br><strong>전체 보기</strong>에서 다양한 의견을 살펴보고, <strong>토론 아레나</strong>에서 상대 입장과 반론을 펼쳐보세요!</p>
       </header>
 
       <!-- 뷰 전환 칩 -->
@@ -587,14 +581,6 @@
         <div id="hot-banner" class="hot-banner" style="display:none;"></div>
         <div class="home-controls">
           <button id="write-btn" class="write-btn">내 의견 쓰기</button>
-          <div class="controls-right">
-            <select id="sort-select" class="sort-select">
-              <option value="latest">최신순</option>
-              <option value="oldest">오래된순</option>
-              <option value="hot">반론 많은 순</option>
-            </select>
-            <input id="search-input" class="search-input" type="text" placeholder="검색...">
-          </div>
         </div>
 
         <!-- 두 컬럼 -->

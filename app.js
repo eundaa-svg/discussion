@@ -390,11 +390,20 @@ function renderHotBanner() {
   }
 
   var p = cachedPayloads[hotAuthor];
+  var isPro = p.side === 'pro';
+
+  // 배너 배경: 찬성이면 파란 계열, 반대이면 빨간 계열
+  el.style.background = isPro
+    ? 'linear-gradient(135deg, #dbeafe, #bfdbfe)'
+    : 'linear-gradient(135deg, #fee2e2, #fecaca)';
+  el.style.borderColor = isPro ? '#93c5fd' : '#fca5a5';
   el.style.display = '';
+
   el.innerHTML =
-    '<div class="hot-banner-label">🔥 가장 뜨거운 의견</div>' +
+    '<div class="hot-banner-label" style="color:' + (isPro ? '#1d4ed8' : '#b91c1c') + '">댓글창 지금 불타는 중🔥</div>' +
     '<p class="hot-banner-summary">' + escapeHtml(p.summary) + '</p>' +
     '<div class="hot-banner-meta">' + escapeHtml(hotAuthor) + ' · 반론 ' + hotCount + '건</div>';
+
   el.onclick = function() {
     var card = document.querySelector('.opinion-card[data-author="' + hotAuthor + '"]');
     if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
