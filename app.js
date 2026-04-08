@@ -1,4 +1,4 @@
-console.log('[app] === LOADED v_copy1 ===');
+console.log('[app] === LOADED v_dual1 ===');
 
 // === 데모 시드 ===
 var DEMO_SEED = {
@@ -232,19 +232,6 @@ function bindGlobalEvents() {
   var searchInp = $('search-input');
   if (searchInp) searchInp.oninput = renderHomeList;
 
-  // 찬반 필터 버튼
-  var sideFilter = $('side-filter');
-  if (sideFilter) {
-    sideFilter.querySelectorAll('.filter-btn').forEach(function(btn) {
-      btn.onclick = function() {
-        currentSideFilter = btn.getAttribute('data-filter') || 'all';
-        sideFilter.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        renderHomeList();
-      };
-    });
-  }
-
   var summaryInp = $('summary-input');
   var reasoningInp = $('reasoning-input');
   var submitBtn = $('submit-btn');
@@ -396,8 +383,8 @@ function renderHotBanner() {
     '<p class="hot-banner-summary">' + escapeHtml(p.summary) + '</p>' +
     '<div class="hot-banner-meta">' + escapeHtml(hotAuthor) + ' · 반론 ' + hotCount + '건</div>';
   el.onclick = function() {
-    var entry = document.querySelector('.opinion-entry[data-author="' + hotAuthor + '"]');
-    if (entry) toggleEntryExpansion(entry, hotAuthor);
+    var card = document.querySelector('.opinion-card[data-author="' + hotAuthor + '"]');
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 }
 
@@ -405,26 +392,38 @@ function getRebuttalCount(author) {
   return collectRebuttalsFor(author, author, 'opinion').length;
 }
 
-var currentExpandedEntry = null;
+function splitReasons(text) {
+  if (!text) return [];
+  var parts = text.split(/\n\s*\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+  if (parts.length <= 1) {
+    parts = text.split(/\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+  }
+  if (parts.length === 0) return [text.trim()];
+  return parts;
+}
+
+function countAllResponsesInTree(targetAuthor) {
+  var tree = buildThreadForOpinion(targetAuthor);
+  var total = 0;
+  function walk(nodes) { nodes.forEach(function(n) { total++; walk(n.children); }); }
+  walk(tree);
+  return total;
+}
 
 function renderHomeList() {
-  var listEl = $('opinion-list');
-  if (!listEl) return;
+  var proListEl = $('pro-list');
+  var conListEl = $('con-list');
+  var proCountEl = $('pro-count');
+  var conCountEl = $('con-count');
+  if (!proListEl || !conListEl) return;
 
   var items = [];
   for (var name in cachedPayloads) {
     var p = cachedPayloads[name];
     if (!p || !p.summary) continue;
-    if (currentSideFilter !== 'all' && p.side !== currentSideFilter) continue;
-    items.push({
-      author: name,
-      side: p.side,
-      summary: p.summary,
-      reasoning: p.reasoning,
-      createdAt: p.createdAt || 0
-    });
+    items.push({ author: name, side: p.side, summary: p.summary, reasoning: p.reasoning, createdAt: p.createdAt || 0 });
   }
-  console.log('[app] render items count:', items.length, 'filter:', currentSideFilter);
+  console.log('[app] render items count:', items.length);
 
   var searchInp = $('search-input');
   var q = searchInp ? searchInp.value.trim().toLowerCase() : '';
@@ -438,222 +437,145 @@ function renderHomeList() {
   var sortSel = $('sort-select');
   var sort = sortSel ? sortSel.value : 'latest';
   items.sort(function(a, b) {
-    if (sort === 'oldest') return a.createdAt - b.createdAt;
     if (sort === 'hot') return countAllResponsesInTree(b.author) - countAllResponsesInTree(a.author);
-    return b.createdAt - a.createdAt;
+    return sort === 'oldest' ? a.createdAt - b.createdAt : b.createdAt - a.createdAt;
   });
 
-  currentExpandedEntry = null;
-  listEl.innerHTML = '';
+  var proItems = items.filter(function(it) { return it.side === 'pro'; });
+  var conItems = items.filter(function(it) { return it.side === 'con'; });
 
+  if (proCountEl) proCountEl.textContent = proItems.length;
+  if (conCountEl) conCountEl.textContent = conItems.length;
+
+  renderColumn(proListEl, proItems, '아직 찬성 의견이 없습니다.');
+  renderColumn(conListEl, conItems, '아직 반대 의견이 없습니다.');
+}
+
+function renderColumn(listEl, items, emptyText) {
+  listEl.innerHTML = '';
   if (items.length === 0) {
-    listEl.innerHTML = '<div class="empty-state">아직 의견이 없습니다.</div>';
+    var empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = emptyText;
+    listEl.appendChild(empty);
     return;
   }
+  items.forEach(function(it) { listEl.appendChild(buildOpinionCard(it)); });
+}
 
-  items.forEach(function(it) {
-    var entry = document.createElement('div');
-    entry.className = 'opinion-entry ' + (it.side === 'pro' ? 'pro-entry' : 'con-entry');
-    entry.setAttribute('data-author', it.author);
+function buildOpinionCard(it) {
+  var card = document.createElement('article');
+  card.className = 'opinion-card';
+  card.setAttribute('data-author', it.author);
+  if (it.author === currentInfo.nickname) card.classList.add('is-mine');
 
-    // === Row ===
-    var row = document.createElement('div');
-    row.className = 'opinion-row';
-    if (it.author === currentInfo.nickname) {
-      row.classList.add('is-mine');
-      var receivedCount = countAllResponsesInTree(it.author);
-      if (receivedCount > 0) {
-        var flame = createFlameBadge(receivedCount, it.side);
-        if (flame) row.appendChild(flame);
-      }
-    }
+  // 헤더
+  var header = document.createElement('div');
+  header.className = 'card-header';
+  var authorEl = document.createElement('span');
+  authorEl.className = 'card-author';
+  authorEl.textContent = it.author;
+  header.appendChild(authorEl);
+  if (it.author === currentInfo.nickname) {
+    var meBadge = document.createElement('span');
+    meBadge.className = 'me-badge';
+    meBadge.textContent = '나';
+    header.appendChild(meBadge);
+  }
+  var metaRight = document.createElement('div');
+  metaRight.className = 'card-meta-right';
+  var totalResp = countAllResponsesInTree(it.author);
+  if (totalResp > 0) {
+    var color = it.side === 'pro' ? '#3b82f6' : '#ef4444';
+    var flame = document.createElement('span');
+    flame.className = 'card-flame';
+    flame.innerHTML =
+      '<svg width="12" height="14" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg">' +
+        '<path d="M12 1 C13 5, 17 6, 17 11 C17 13, 16 14, 15 15 C16 14, 18 13, 19 11 C20 14, 21 16, 21 19 C21 24, 17 27, 12 27 C7 27, 3 24, 3 19 C3 14, 7 11, 9 7 C10 9, 11 11, 12 11 C12 7, 11 4, 12 1 Z" fill="' + color + '"/>' +
+      '</svg>' +
+      '<span>' + totalResp + '</span>';
+    metaRight.appendChild(flame);
+  }
+  header.appendChild(metaRight);
+  card.appendChild(header);
 
-    var authorEl = document.createElement('div');
-    authorEl.className = 'opinion-author';
-    authorEl.textContent = it.author;
-    if (it.author === currentInfo.nickname) {
-      var meBadgeHome = document.createElement('span');
-      meBadgeHome.className = 'me-badge';
-      meBadgeHome.textContent = '내 의견';
-      authorEl.appendChild(meBadgeHome);
-    }
+  // 요약
+  var summary = document.createElement('h3');
+  summary.className = 'card-summary';
+  summary.textContent = it.summary;
+  card.appendChild(summary);
 
-    var summaryEl = document.createElement('div');
-    summaryEl.className = 'opinion-summary';
-    summaryEl.textContent = it.summary;
-
-    var metaEl = document.createElement('div');
-    metaEl.className = 'opinion-meta';
-    metaEl.textContent = formatDate(it.createdAt);
-
-    var rebEl = document.createElement('span');
-    rebEl.className = 'opinion-rebcount';
-    rebEl.textContent = '응답 ' + countAllResponsesInTree(it.author);
-
-    var badge = document.createElement('span');
-    badge.className = 'side-badge';
-    setSideBadge(badge, it.side);
-
-    row.appendChild(authorEl);
-    row.appendChild(summaryEl);
-    row.appendChild(metaEl);
-    row.appendChild(rebEl);
-    row.appendChild(badge);
-
-    // === Expanded ===
-    var expanded = document.createElement('div');
-    expanded.className = 'opinion-expanded';
-    expanded.onclick = function(e) { e.stopPropagation(); };
-
-    var inner = document.createElement('div');
-    inner.className = 'opinion-expanded-inner';
-    expanded.appendChild(inner);
-
-    entry.appendChild(row);
-    entry.appendChild(expanded);
-
-    row.onclick = (function(e_, it_) {
-      return function(e) {
-        e.stopPropagation();
-        toggleEntryExpansion(e_.parentElement, it_.author);
-      };
-    })(row, it);
-
-    listEl.appendChild(entry);
+  // 근거 블록
+  var reasons = splitReasons(it.reasoning);
+  reasons.forEach(function(r, idx) {
+    var block = document.createElement('div');
+    block.className = 'reason-block';
+    var label = document.createElement('span');
+    label.className = 'reason-label';
+    label.textContent = '근거 ' + (idx + 1);
+    var text = document.createElement('p');
+    text.className = 'reason-text';
+    text.textContent = r;
+    block.appendChild(label);
+    block.appendChild(text);
+    card.appendChild(block);
   });
-}
 
-function toggleEntryExpansion(entry, author) {
-  var isOpen = entry.classList.contains('expanded');
-  if (currentExpandedEntry && currentExpandedEntry !== entry) {
-    currentExpandedEntry.classList.remove('expanded');
-  }
-  if (isOpen) {
-    entry.classList.remove('expanded');
-    currentExpandedEntry = null;
-  } else {
-    renderExpandedContent(entry, author);
-    entry.classList.add('expanded');
-    currentExpandedEntry = entry;
-    setTimeout(function() {
-      entry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 100);
-  }
-}
-
-function renderExpandedContent(entry, author) {
-  var inner = entry.querySelector('.opinion-expanded-inner');
-  if (!inner) return;
-  var p = cachedPayloads[author];
-  if (!p) { inner.innerHTML = ''; return; }
-  inner.innerHTML = '';
-
-  // 1. 논거 본문
-  var reasoningBlock = document.createElement('div');
-  reasoningBlock.className = 'expanded-reasoning';
-  reasoningBlock.textContent = p.reasoning || '';
-  inner.appendChild(reasoningBlock);
-
-  // 2. 응답 제목
-  var totalResp = countAllResponsesInTree(author);
-  var respTitle = document.createElement('h3');
-  respTitle.className = 'expanded-resp-title';
-  respTitle.textContent = '응답 ' + totalResp;
-  inner.appendChild(respTitle);
-
-  // 3. 스레드
-  var threadContainer = document.createElement('div');
-  threadContainer.className = 'expanded-thread';
-  var tree = buildThreadForOpinion(author);
+  // 스레드
+  var threadWrap = document.createElement('div');
+  threadWrap.className = 'card-thread';
+  var tree = buildThreadForOpinion(it.author);
   if (tree.length === 0) {
-    threadContainer.innerHTML = '<div class="empty-state" style="padding:16px 0;font-size:13px;">아직 응답이 없습니다.</div>';
+    var emptyEl = document.createElement('div');
+    emptyEl.className = 'card-thread-empty';
+    emptyEl.textContent = '아직 반론이 없습니다.';
+    threadWrap.appendChild(emptyEl);
   } else {
-    tree.forEach(function(node) {
-      threadContainer.appendChild(buildThreadNode(node, p.side));
-    });
+    tree.forEach(function(node) { threadWrap.appendChild(buildThreadNode(node, it.side)); });
   }
-  inner.appendChild(threadContainer);
+  card.appendChild(threadWrap);
 
-  // 4. 입력창 (본인 아닐 때)
-  if (author !== currentInfo.nickname) {
-    var inputBlock = document.createElement('div');
-    inputBlock.className = 'expanded-input';
-    inputBlock.innerHTML =
-      '<div class="expanded-input-divider">의견 남기기</div>' +
-      '<textarea class="expanded-textarea" placeholder="당신의 생각을 자유롭게 남겨보세요..."></textarea>' +
-      '<div class="form-actions"><button class="primary-btn expanded-submit" disabled>등록</button></div>';
-    inner.appendChild(inputBlock);
-    var ta = inputBlock.querySelector('.expanded-textarea');
-    var sub = inputBlock.querySelector('.expanded-submit');
-    ta.oninput = function() { sub.disabled = ta.value.trim().length === 0; };
-    sub.onclick = function(e) {
-      e.stopPropagation();
-      var text = ta.value.trim();
-      if (!text) return;
-      sub.disabled = true;
-      submitRebuttalInline(author, text, entry);
-    };
-    inputBlock.onclick = function(e) { e.stopPropagation(); };
-  } else {
-    var mineNotice = document.createElement('div');
-    mineNotice.className = 'expanded-mine-notice';
-    mineNotice.textContent = totalResp > 0
-      ? '이 의견에 ' + totalResp + '개의 응답이 달렸습니다.'
-      : '본인의 의견에는 직접 응답할 수 없습니다.';
-    inner.appendChild(mineNotice);
+  // 반론 달기 (본인 제외)
+  if (it.author !== currentInfo.nickname) {
+    var actions = document.createElement('div');
+    actions.className = 'card-actions';
+    var replyBtn = document.createElement('button');
+    replyBtn.className = 'action-btn';
+    replyBtn.textContent = '반론 달기';
+    (function(cardEl, author) {
+      replyBtn.onclick = function(e) { e.stopPropagation(); toggleCardReplyForm(cardEl, author); };
+    })(card, it.author);
+    actions.appendChild(replyBtn);
+    card.appendChild(actions);
   }
+
+  return card;
 }
 
-function countAllResponsesInTree(targetAuthor) {
-  var tree = buildThreadForOpinion(targetAuthor);
-  var total = 0;
-  function walk(nodes) { nodes.forEach(function(n) { total++; walk(n.children); }); }
-  walk(tree);
-  return total;
-}
-
-function submitRebuttalInline(targetAuthor, text, entry) {
-  loadPayloadsWithSeed(currentInfo).then(function(payloads) {
-    var mine = (payloads && payloads[currentInfo.nickname]) || {
-      side: currentInfo.side, summary: '', reasoning: '', createdAt: Date.now(), rebuttals: []
-    };
-    if (!mine.rebuttals) mine.rebuttals = [];
-    mine.rebuttals.push({
-      id: 'reb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      targetType: 'opinion',
-      targetAuthor: targetAuthor,
-      targetId: targetAuthor,
-      content: text,
-      timestamp: Date.now()
-    });
-    return currentInfo.savePayload(mine);
-  }).then(function() {
-    return loadPayloadsWithSeed(currentInfo);
-  }).then(function(payloads) {
-    cachedPayloads = payloads || {};
-    showToast('의견이 등록되었습니다.');
-    renderExpandedContent(entry, targetAuthor);
-    updateRowResponseCount(entry, targetAuthor);
-  }).catch(function(err) {
-    console.error('[app] 저장 실패:', err);
-    showToast('저장 실패: ' + (err.message || err));
-  });
-}
-
-function updateRowResponseCount(entry, author) {
-  var rebEl = entry.querySelector('.opinion-row .opinion-rebcount');
-  if (rebEl) rebEl.textContent = '응답 ' + countAllResponsesInTree(author);
-  if (author === currentInfo.nickname) {
-    var row = entry.querySelector('.opinion-row');
-    var existingFlame = row.querySelector('.flame-badge');
-    if (existingFlame) existingFlame.remove();
-    var newCount = countAllResponsesInTree(author);
-    if (newCount > 0) {
-      var p = cachedPayloads[author];
-      var flame = createFlameBadge(newCount, p ? p.side : currentInfo.side);
-      if (flame) row.appendChild(flame);
-    }
-  }
+function toggleCardReplyForm(cardEl, targetAuthor) {
+  var existing = cardEl.querySelector(':scope > .inline-reply-form');
+  if (existing) { existing.remove(); return; }
+  var form = document.createElement('div');
+  form.className = 'inline-reply-form';
+  form.innerHTML =
+    '<textarea class="inline-reply-textarea" placeholder="당신의 반론을 남겨보세요..."></textarea>' +
+    '<div class="inline-reply-actions">' +
+      '<button class="cancel-btn">취소</button>' +
+      '<button class="submit-btn" disabled>등록</button>' +
+    '</div>';
+  cardEl.appendChild(form);
+  var ta = form.querySelector('.inline-reply-textarea');
+  var sub = form.querySelector('.submit-btn');
+  ta.oninput = function() { sub.disabled = ta.value.trim().length === 0; };
+  form.querySelector('.cancel-btn').onclick = function(e) { e.stopPropagation(); form.remove(); };
+  sub.onclick = function(e) {
+    e.stopPropagation();
+    var text = ta.value.trim();
+    if (!text) return;
+    sub.disabled = true;
+    submitRebuttal({ targetType: 'opinion', targetAuthor: targetAuthor, targetId: targetAuthor, content: text });
+  };
+  ta.focus();
 }
 
 // === 작성 ===
@@ -1256,12 +1178,10 @@ function submitRebuttal(data) {
     return loadPayloadsWithSeed(currentInfo);
   }).then(function(payloads) {
     cachedPayloads = payloads || {};
-    showToast('의견이 등록되었습니다.');
-    if (currentExpandedEntry) {
-      var author = currentExpandedEntry.getAttribute('data-author');
-      renderExpandedContent(currentExpandedEntry, author);
-      updateRowResponseCount(currentExpandedEntry, author);
-    }
+    showToast('반론이 등록되었습니다.');
+    renderHomeList();
+    renderHomeStats();
+    renderHotBanner();
   }).catch(function(err) {
     console.error('[app] 반박 저장 실패:', err);
     showToast('저장 실패: ' + (err.message || err));
