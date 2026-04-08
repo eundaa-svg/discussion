@@ -1,4 +1,4 @@
-console.log('[app] === LOADED v_dual1 ===');
+console.log('[app] === LOADED v_yt1 ===');
 
 // === 데모 시드 ===
 var DEMO_SEED = {
@@ -531,7 +531,7 @@ function buildOpinionCard(it) {
     emptyEl.textContent = '아직 반론이 없습니다.';
     threadWrap.appendChild(emptyEl);
   } else {
-    tree.forEach(function(node) { threadWrap.appendChild(buildThreadNode(node, it.side)); });
+    tree.forEach(function(node) { threadWrap.appendChild(buildThreadNode(node, it.side, 1)); });
   }
   card.appendChild(threadWrap);
 
@@ -840,7 +840,7 @@ function buildAllRebuttals() {
 function buildThreadForOpinion(targetAuthor) {
   var all = buildAllRebuttals();
   function buildChildren(parentId, isOpinion, depth) {
-    if (depth > 3) return [];
+    if (depth > 50) return []; // 무한루프 안전장치
     return all.filter(function(r) {
       return isOpinion
         ? (r.targetType === 'opinion' && r.targetAuthor === parentId)
@@ -889,10 +889,13 @@ function renderThread(targetAuthor) {
   });
 }
 
-function buildThreadNode(entry, rootTargetSide) {
+function buildThreadNode(entry, rootTargetSide, visualDepth) {
+  if (typeof visualDepth !== 'number') visualDepth = Math.min(entry.depth, 2);
+  var clampedVisual = Math.min(visualDepth, 2);
+
   var r = entry.node;
   var wrapper = document.createElement('div');
-  wrapper.className = 'thread-node depth-' + entry.depth;
+  wrapper.className = 'thread-node depth-' + clampedVisual;
   if (r.author === currentInfo.nickname) wrapper.classList.add('is-mine');
 
   // 헤더
@@ -912,42 +915,46 @@ function buildThreadNode(entry, rootTargetSide) {
   sideBadge.className = 'side-badge';
   setSideBadge(sideBadge, r.side);
   head.appendChild(sideBadge);
-
   var timeSpan = document.createElement('span');
   timeSpan.className = 'time';
   timeSpan.textContent = formatDate(r.timestamp);
   head.appendChild(timeSpan);
   wrapper.appendChild(head);
 
-  // 본문
+  // 본문 (depth 2 이상 rebuttal이면 @멘션 자동 삽입)
   var body = document.createElement('p');
   body.className = 'thread-body';
-  body.textContent = r.content;
+  if (entry.depth >= 2 && r.targetType === 'rebuttal') {
+    var parent = findRebuttalById(r.targetId);
+    if (parent && parent.author && parent.author !== r.author) {
+      var mention = document.createElement('span');
+      mention.className = 'mention';
+      mention.textContent = '@' + parent.author + ' ';
+      body.appendChild(mention);
+    }
+  }
+  body.appendChild(document.createTextNode(r.content));
   wrapper.appendChild(body);
 
-  // 액션 버튼
+  // 답글 버튼 (본인 아닐 때, 깊이 제한 없음)
   var actions = document.createElement('div');
   actions.className = 'thread-actions';
-  if (r.author !== currentInfo.nickname && entry.depth < 3) {
+  if (r.author !== currentInfo.nickname) {
     var replyBtn = document.createElement('button');
     replyBtn.className = 'reply-toggle-btn';
-    replyBtn.textContent = '답글 달기';
+    replyBtn.textContent = '답글';
     (function(w, rr) { replyBtn.onclick = function() { toggleInlineReply(w, rr); }; })(wrapper, r);
     actions.appendChild(replyBtn);
-  } else if (entry.depth >= 3) {
-    var noMore = document.createElement('span');
-    noMore.className = 'no-more-reply';
-    noMore.textContent = '더 이상 답글을 달 수 없습니다';
-    actions.appendChild(noMore);
   }
   wrapper.appendChild(actions);
 
-  // 자식 노드
+  // 자식 노드 (시각 깊이는 2에서 고정)
   if (entry.children.length > 0) {
     var childrenWrap = document.createElement('div');
-    childrenWrap.className = 'thread-children';
+    var nextVisual = Math.min(clampedVisual + 1, 2);
+    childrenWrap.className = clampedVisual >= 2 ? 'thread-children thread-children-flat' : 'thread-children';
     entry.children.forEach(function(child) {
-      childrenWrap.appendChild(buildThreadNode(child, rootTargetSide));
+      childrenWrap.appendChild(buildThreadNode(child, rootTargetSide, nextVisual));
     });
     wrapper.appendChild(childrenWrap);
   }
