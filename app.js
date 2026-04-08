@@ -777,8 +777,14 @@ function enterPersuadeScreen(opp) {
   if (sideEl) setSideBadge(sideEl, opp.side);
   if (sumEl) sumEl.textContent = opp.summary || '';
   if (reaEl) reaEl.textContent = opp.reasoning || '';
-  if (inp) { inp.value = ''; inp.oninput = function() { if (subBtn) subBtn.disabled = inp.value.trim().length === 0; }; }
-  if (subBtn) { subBtn.disabled = true; subBtn.onclick = handleSubmitPersuade; }
+  if (inp) {
+    var prefix = '@' + opp.nickname + ' ';
+    inp.value = prefix;
+    inp.oninput = function() { if (subBtn) subBtn.disabled = inp.value.trim().length === 0; };
+    if (subBtn) subBtn.disabled = inp.value.trim().length === 0;
+    setTimeout(function() { inp.setSelectionRange(prefix.length, prefix.length); }, 0);
+  }
+  if (subBtn) { subBtn.onclick = handleSubmitPersuade; }
 
   console.log('[persuade] showScreen(screen-persuade) 호출');
   showScreen('screen-persuade');
