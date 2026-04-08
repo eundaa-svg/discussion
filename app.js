@@ -81,6 +81,17 @@ function loadPayloadsWithSeed(info) {
       }
     }
 
+    // 데모 모드에서 현재 접속 유저의 side를 URL 파라미터 기준으로 강제 교정
+    if (isDemoMode() && info && info.nickname) {
+      var urlSideCheck = new URLSearchParams(location.search).get('side');
+      if ((urlSideCheck === 'pro' || urlSideCheck === 'con') && result[info.nickname]) {
+        if (result[info.nickname].side !== urlSideCheck) {
+          console.log('[merge] 데모 side 교정:', info.nickname, result[info.nickname].side, '→', urlSideCheck);
+          result[info.nickname] = Object.assign({}, result[info.nickname], { side: urlSideCheck });
+        }
+      }
+    }
+
     console.log('[merge] final keys:', Object.keys(result));
     return result;
   }).catch(function(err) {
@@ -93,6 +104,15 @@ function loadPayloadsWithSeed(info) {
         if (scanned2[s2] && scanned2[s2].summary) {
           if (!scanned2[s2].rebuttals) scanned2[s2].rebuttals = [];
           r[s2] = scanned2[s2];
+        }
+      }
+      if (info && info.nickname) {
+        var urlSideCheck2 = new URLSearchParams(location.search).get('side');
+        if ((urlSideCheck2 === 'pro' || urlSideCheck2 === 'con') && r[info.nickname]) {
+          if (r[info.nickname].side !== urlSideCheck2) {
+            console.log('[merge] catch 데모 side 교정:', info.nickname, r[info.nickname].side, '→', urlSideCheck2);
+            r[info.nickname] = Object.assign({}, r[info.nickname], { side: urlSideCheck2 });
+          }
         }
       }
       return r;
@@ -1387,7 +1407,7 @@ function submitArenaRebuttal(opp) {
 
   loadPayloadsWithSeed(currentInfo).then(function(payloads) {
     var mine = (payloads && payloads[currentInfo.nickname]) || {
-      side: currentInfo.side, summary: '', reasoning: '', createdAt: Date.now(), rebuttals: []
+      side: getMyNormalizedSide(), summary: '', reasoning: '', createdAt: Date.now(), rebuttals: []
     };
     if (!mine.rebuttals) mine.rebuttals = [];
     mine.rebuttals.push({
