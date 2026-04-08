@@ -503,55 +503,6 @@
       .arena-divider::after  { margin-left: 80px; width: 60px; }
     }
 
-    /* === 정보 버튼 === */
-    .info-btn {
-      margin-left: auto; width: 32px; height: 32px; border-radius: 50%;
-      background: #fff; border: 1px solid #e4e4e7; color: #71717a;
-      font-size: 14px; font-weight: 700; font-style: italic;
-      cursor: pointer; font-family: Georgia, serif; transition: all 0.2s ease;
-    }
-    .info-btn:hover { background: #18181b; color: #fff; border-color: #18181b; }
-
-    /* === 도움말 모달 === */
-    .help-modal { display: none; position: fixed; inset: 0; z-index: 1800; align-items: center; justify-content: center; }
-    .help-modal.show { display: flex; }
-    .help-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
-    .help-card {
-      position: relative; background: #fff; border-radius: 16px; padding: 40px 36px 32px;
-      max-width: 620px; width: 92%; max-height: 88vh; overflow-y: auto; z-index: 1;
-      animation: modal-in 0.3s ease;
-    }
-    .help-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 18px; color: #71717a; cursor: pointer; }
-    .help-title { font-size: 24px; font-weight: 800; margin: 0 0 6px 0; }
-    .help-subtitle { font-size: 14px; color: #71717a; margin: 0 0 28px 0; }
-    .help-section { margin-bottom: 26px; padding-bottom: 22px; border-bottom: 1px solid #f1f1f3; }
-    .help-section-label {
-      display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-      color: #71717a; background: #f4f4f5; padding: 3px 8px; border-radius: 4px; margin-bottom: 8px;
-    }
-    .help-section-title { font-size: 18px; font-weight: 800; margin: 0 0 8px 0; }
-    .help-section-desc { font-size: 14px; color: #52525b; line-height: 1.65; margin: 0 0 12px 0; }
-    .help-list { margin: 0; padding-left: 18px; font-size: 13px; color: #52525b; line-height: 1.75; }
-    .help-list li { margin-bottom: 2px; }
-    .help-flow { background: #fafafa; border-radius: 12px; padding: 20px; margin: 10px 0 24px 0; }
-    .help-flow-title { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #71717a; text-transform: uppercase; text-align: center; margin-bottom: 16px; }
-    .help-flow-diagram { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .flow-step { flex: 1; text-align: center; }
-    .flow-num {
-      width: 34px; height: 34px; border-radius: 50%; background: #18181b; color: #fff;
-      font-size: 14px; font-weight: 800; display: inline-flex; align-items: center;
-      justify-content: center; margin-bottom: 8px;
-    }
-    .flow-text { font-size: 13px; font-weight: 700; color: #18181b; line-height: 1.35; }
-    .flow-text span { display: block; font-size: 11px; font-weight: 500; color: #71717a; margin-top: 2px; }
-    .flow-arrow { color: #a1a1aa; font-size: 18px; font-weight: 700; flex: 0 0 auto; }
-    .help-footer { text-align: right; }
-    .help-footer .primary-btn { min-width: 120px; }
-    @media (max-width: 640px) {
-      .help-card { padding: 28px 22px 22px; }
-      .help-flow-diagram { flex-direction: column; gap: 14px; }
-      .flow-arrow { transform: rotate(90deg); }
-    }
   </style>
 </head>
 <body>
@@ -565,14 +516,13 @@
     <div class="page">
       <header class="home-header">
         <h1 class="home-title" id="home-title">토론 주제</h1>
-        <p class="home-desc">이 사이트는 두 가지 모드로 토론할 수 있습니다.<br><strong>전체 보기</strong>에서 다양한 의견을 살펴보고, <strong>토론 아레나</strong>에서 상대 입장과 반론을 펼쳐보세요!</p>
+        <p class="home-desc" id="home-desc">이 사이트는 두 가지 모드로 토론할 수 있습니다.<br><strong>전체 보기</strong>에서 다양한 의견을 살펴보고, <strong>토론 아레나</strong>에서 상대 입장과 반론을 펼쳐보세요!</p>
       </header>
 
       <!-- 뷰 전환 칩 -->
       <div class="view-chips">
         <button class="view-chip" data-view="arena">토론 아레나</button>
         <button class="view-chip active" data-view="all">전체 보기</button>
-        <button class="info-btn" id="info-btn" aria-label="사용법 보기">i</button>
       </div>
 
       <!-- 뷰 1: 전체 보기 -->
@@ -648,7 +598,7 @@
         </div>
         <h2 class="arena-modal-summary" id="arena-modal-summary"></h2>
         <p class="arena-modal-reasoning" id="arena-modal-reasoning"></p>
-        <textarea id="arena-modal-input" class="rebuttal-textarea" placeholder="당신의 생각을 자유롭게 남겨보세요..."></textarea>
+        <textarea id="arena-modal-input" class="rebuttal-textarea" placeholder="이 의견, 동의하시나요? 아니면 반박해보세요"></textarea>
         <div class="form-actions">
           <button class="secondary-btn" id="arena-modal-cancel">취소</button>
           <button class="primary-btn" id="arena-modal-submit" disabled>반론 제출</button>
@@ -722,63 +672,6 @@
 
 
   <div id="toast" class="toast"></div>
-
-  <!-- 도움말 모달 -->
-  <div class="help-modal" id="help-modal">
-    <div class="help-backdrop" id="help-backdrop"></div>
-    <div class="help-card">
-      <button class="help-close" id="help-close">✕</button>
-      <h2 class="help-title">어떻게 토론하나요?</h2>
-      <p class="help-subtitle">두 가지 방식으로 토론에 참여할 수 있습니다.</p>
-
-      <div class="help-section">
-        <div class="help-section-label">MODE 1</div>
-        <h3 class="help-section-title">전체 보기</h3>
-        <p class="help-section-desc">찬성과 반대의 모든 의견이 한 리스트에 섞여서 보입니다. 카드를 클릭하면 인라인으로 펼쳐지며 반론 스레드를 볼 수 있고, 직접 반론을 달 수 있습니다.</p>
-        <ul class="help-list">
-          <li>의견 검색, 정렬, 찬반 필터링 가능</li>
-          <li>카드를 클릭하면 반론 스레드가 바로 펼쳐짐</li>
-          <li>반론에 재반론 1단계까지 가능</li>
-        </ul>
-      </div>
-
-      <div class="help-section">
-        <div class="help-section-label">MODE 2</div>
-        <h3 class="help-section-title">토론 아레나</h3>
-        <p class="help-section-desc">내가 중심에 있고 상대 입장의 의견들이 주변을 둘러쌉니다. 카드를 클릭하면 "이의 있음!" 연출과 함께 반론 모달이 열립니다. 상대 입장을 하나씩 빠르게 반론할 수 있는 집중 모드입니다.</p>
-        <ul class="help-list">
-          <li>본인 의견 작성 후에만 입장 가능</li>
-          <li>상대 입장 의견만 표시</li>
-          <li>반론 완료한 카드는 흐려지며 "반론 완료" 표시</li>
-          <li>진행도(반론 N / 전체 N) 실시간 집계</li>
-        </ul>
-      </div>
-
-      <div class="help-flow">
-        <div class="help-flow-title">전체 흐름</div>
-        <div class="help-flow-diagram">
-          <div class="flow-step">
-            <div class="flow-num">1</div>
-            <div class="flow-text">내 의견 작성<br><span>한 줄 요약 + 근거</span></div>
-          </div>
-          <div class="flow-arrow">→</div>
-          <div class="flow-step">
-            <div class="flow-num">2</div>
-            <div class="flow-text">설득 미션<br><span>반대편 1명과 자동 매칭</span></div>
-          </div>
-          <div class="flow-arrow">→</div>
-          <div class="flow-step">
-            <div class="flow-num">3</div>
-            <div class="flow-text">자유 토론<br><span>전체 보기 / 토론 아레나</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="help-footer">
-        <button class="primary-btn" id="help-got-it">알겠습니다</button>
-      </div>
-    </div>
-  </div>
 
   <script src="https://debate-md2-2603.web.app/debate-core.js" data-architect-id="dan"></script>
   <script src="app.js?v=fix1"></script>

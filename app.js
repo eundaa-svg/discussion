@@ -290,18 +290,6 @@ function bindGlobalEvents() {
   var agBtn = $('arena-guard-btn');
   if (agBtn) agBtn.onclick = openWriteScreen;
 
-  // 도움말 모달
-  var infoBtn = $('info-btn');
-  var helpModal = $('help-modal');
-  var helpClose = $('help-close');
-  var helpBackdrop = $('help-backdrop');
-  var helpGotIt = $('help-got-it');
-  function openHelp() { if (helpModal) helpModal.classList.add('show'); }
-  function closeHelp() { if (helpModal) helpModal.classList.remove('show'); }
-  if (infoBtn) infoBtn.onclick = openHelp;
-  if (helpClose) helpClose.onclick = closeHelp;
-  if (helpBackdrop) helpBackdrop.onclick = closeHelp;
-  if (helpGotIt) helpGotIt.onclick = closeHelp;
 }
 
 // === 홈 ===
@@ -335,6 +323,16 @@ function switchHomeView(view) {
   document.querySelectorAll('.view-chip').forEach(function(c) {
     c.classList.toggle('active', c.getAttribute('data-view') === view);
   });
+
+  var descEl = document.getElementById('home-desc');
+  if (descEl) {
+    if (view === 'arena') {
+      descEl.innerHTML = '당신을 둘러싼 상대 진영.<br>하나씩 선택해 반박하고, 토론의 흐름을 뒤집어보세요.';
+    } else {
+      descEl.innerHTML = '이 사이트는 두 가지 모드로 토론할 수 있습니다.<br><strong>전체 보기</strong>에서 다양한 의견을 살펴보고, <strong>토론 아레나</strong>에서 상대 입장과 반론을 펼쳐보세요!';
+    }
+  }
+
   var viewAll = document.getElementById('view-all');
   var viewArena = document.getElementById('view-arena');
   if (!viewAll || !viewArena) return;
