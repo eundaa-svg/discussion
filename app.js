@@ -965,9 +965,20 @@ function buildThreadNode(entry, rootTargetSide, visualDepth) {
   head.appendChild(timeSpan);
   wrapper.appendChild(head);
 
-  // 본문: content 내 @멘션 파싱하여 스타일 적용
+  // 본문: depth 2 이상 rebuttal → 부모 작성자 @멘션 자동 prepend + content 내 @멘션 파싱
   var body = document.createElement('p');
   body.className = 'thread-body';
+
+  if (entry.depth >= 2 && r.targetType === 'rebuttal') {
+    var parent = findRebuttalById(r.targetId);
+    if (parent && parent.author && parent.author !== r.author) {
+      var autoMention = document.createElement('span');
+      autoMention.className = 'mention';
+      autoMention.textContent = '@' + parent.author + ' ';
+      body.appendChild(autoMention);
+    }
+  }
+
   renderContentWithMentions(body, r.content);
   wrapper.appendChild(body);
 
