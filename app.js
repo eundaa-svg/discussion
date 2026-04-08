@@ -774,11 +774,10 @@ function enterPersuadeScreen(opp) {
   if (sumEl) sumEl.textContent = opp.summary || '';
   if (reaEl) reaEl.textContent = opp.reasoning || '';
   if (inp) {
-    var prefix = '@' + opp.nickname + ' ';
-    inp.value = prefix;
+    inp.value = '';
+    inp.placeholder = opp.nickname + '에게 반론을 남겨보세요';
     inp.oninput = function() { if (subBtn) subBtn.disabled = inp.value.trim().length === 0; };
-    if (subBtn) subBtn.disabled = inp.value.trim().length === 0;
-    setTimeout(function() { inp.setSelectionRange(prefix.length, prefix.length); }, 0);
+    if (subBtn) subBtn.disabled = true;
   }
   if (subBtn) { subBtn.onclick = handleSubmitPersuade; }
 
@@ -796,6 +795,12 @@ function handleSubmitPersuade() {
   if (subBtn) subBtn.disabled = true;
 
   var opp = currentPersuadeOpponent;
+  // 사용자가 직접 @멘션을 안 달았으면 자동으로 앞에 붙여 저장
+  var mentionPrefix = '@' + opp.nickname + ' ';
+  var contentToSave = text.trimStart().toLowerCase().indexOf('@' + opp.nickname.toLowerCase()) === 0
+    ? text
+    : mentionPrefix + text;
+
   loadPayloadsWithSeed(currentInfo).then(function(payloads) {
     var mine = (payloads && payloads[currentInfo.nickname]) || {
       side: getMyNormalizedSide() || currentInfo.side,
@@ -810,7 +815,7 @@ function handleSubmitPersuade() {
       targetType: 'opinion',
       targetAuthor: opp.nickname,
       targetId: opp.nickname,
-      content: text,
+      content: contentToSave,
       timestamp: Date.now()
     });
     return currentInfo.savePayload(mine);
