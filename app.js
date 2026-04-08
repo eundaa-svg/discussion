@@ -1,30 +1,5 @@
 console.log('[app] === LOADED v_fix1 ===');
 
-// === 가명 시스템 ===
-var ALIAS_ADJECTIVES = [
-  '날개치는', '고독한', '배회하는', '잠든', '달리는',
-  '노래하는', '헤엄치는', '춤추는', '빛나는', '조용한',
-  '용감한', '느긋한', '신비로운', '활발한', '차분한',
-  '영리한', '엉뚱한', '진지한', '유쾌한', '당당한'
-];
-var ALIAS_ANIMALS = [
-  '코끼리', '돌고래', '기린', '코뿔소', '펭귄',
-  '여우', '늑대', '부엉이', '사자', '표범',
-  '곰', '너구리', '고래', '독수리', '카멜레온',
-  '오리', '햄스터', '판다', '치타', '앵무새'
-];
-
-function getNicknameAlias(nickname) {
-  var hash = 0;
-  for (var i = 0; i < nickname.length; i++) {
-    hash = (hash * 31 + nickname.charCodeAt(i)) & 0xffffffff;
-  }
-  var absHash = Math.abs(hash);
-  var adj = ALIAS_ADJECTIVES[absHash % ALIAS_ADJECTIVES.length];
-  var animal = ALIAS_ANIMALS[Math.floor(absHash / ALIAS_ADJECTIVES.length) % ALIAS_ANIMALS.length];
-  return adj + ' ' + animal;
-}
-
 // === 데모 시드 ===
 var DEMO_SEED = {
   alice: { side: "con", summary: "축의금은 친밀도에 비례해야 한다", reasoning: "직장 선배라는 이유만으로 10만원을 강요받는 것은 사회 초년생에게 부담입니다.", createdAt: Date.now() - 18000000, rebuttals: [] },
@@ -420,7 +395,7 @@ function renderHotBanner() {
   el.innerHTML =
     '<div class="hot-banner-label" style="color:' + (isPro ? '#1d4ed8' : '#b91c1c') + '">댓글창 지금 불타는 중🔥</div>' +
     '<p class="hot-banner-summary">' + escapeHtml(p.summary) + '</p>' +
-    '<div class="hot-banner-meta">' + escapeHtml(getNicknameAlias(hotAuthor)) + ' · 반론 ' + hotCount + '건</div>';
+    '<div class="hot-banner-meta">' + escapeHtml(hotAuthor) + ' · 반론 ' + hotCount + '건</div>';
 
   el.onclick = function() {
     var card = document.querySelector('.opinion-card[data-author="' + hotAuthor + '"]');
@@ -514,7 +489,7 @@ function buildOpinionCard(it) {
   header.className = 'card-header';
   var authorEl = document.createElement('span');
   authorEl.className = 'card-author';
-  authorEl.textContent = getNicknameAlias(it.author);
+  authorEl.textContent = it.author;
   header.appendChild(authorEl);
   if (it.author === currentInfo.nickname) {
     var meBadge = document.createElement('span');
@@ -604,7 +579,7 @@ function toggleCardReplyForm(cardEl, targetAuthor) {
   var sub = form.querySelector('.submit-btn');
 
   // @멘션 자동 삽입
-  var prefix = '@' + getNicknameAlias(targetAuthor) + ' ';
+  var prefix = '@' + targetAuthor + ' ';
   ta.value = prefix;
   ta.setSelectionRange(prefix.length, prefix.length);
   sub.disabled = ta.value.trim().length === 0;
@@ -798,12 +773,12 @@ function enterPersuadeScreen(opp) {
   var reaEl = document.getElementById('persuade-reasoning');
   var inp = document.getElementById('persuade-input');
   var subBtn = document.getElementById('persuade-submit');
-  if (authEl) authEl.textContent = getNicknameAlias(opp.nickname);
+  if (authEl) authEl.textContent = opp.nickname;
   if (sideEl) setSideBadge(sideEl, opp.side);
   if (sumEl) sumEl.textContent = opp.summary || '';
   if (reaEl) reaEl.textContent = opp.reasoning || '';
   if (inp) {
-    var prefix = '@' + getNicknameAlias(opp.nickname) + ' ';
+    var prefix = '@' + opp.nickname + ' ';
     inp.value = prefix;
     inp.oninput = function() { if (subBtn) subBtn.disabled = inp.value.trim().length === 0; };
     if (subBtn) subBtn.disabled = inp.value.trim().length === 0;
@@ -966,7 +941,7 @@ function buildThreadNode(entry, rootTargetSide, visualDepth) {
   head.className = 'thread-head';
   var authorSpan = document.createElement('span');
   authorSpan.className = 'author';
-  authorSpan.textContent = getNicknameAlias(r.author);
+  authorSpan.textContent = r.author;
   head.appendChild(authorSpan);
   if (r.author === currentInfo.nickname) {
     var meBadge = document.createElement('span');
@@ -998,7 +973,7 @@ function buildThreadNode(entry, rootTargetSide, visualDepth) {
       if (!alreadyMentioned) {
         var autoMention = document.createElement('span');
         autoMention.className = 'mention';
-        autoMention.textContent = '@' + getNicknameAlias(parent.author) + ' ';
+        autoMention.textContent = '@' + parent.author + ' ';
         body.appendChild(autoMention);
       }
     }
@@ -1048,7 +1023,7 @@ function toggleInlineReply(parentEl, parentRebuttal) {
   var sub = form.querySelector('.submit-btn');
 
   // @멘션 자동 삽입
-  var prefix = '@' + getNicknameAlias(parentRebuttal.author) + ' ';
+  var prefix = '@' + parentRebuttal.author + ' ';
   ta.value = prefix;
   ta.setSelectionRange(prefix.length, prefix.length);
   sub.disabled = ta.value.trim().length === 0;
@@ -1099,7 +1074,7 @@ function renderRebuttalsList(targetAuthor) {
 
     var authorSpan = document.createElement('span');
     authorSpan.className = 'author';
-    authorSpan.textContent = getNicknameAlias(r.author);
+    authorSpan.textContent = r.author;
     if (r.author === currentInfo.nickname) {
       var meBadgeReb = document.createElement('span');
       meBadgeReb.className = 'me-badge';
@@ -1354,7 +1329,7 @@ function renderArenaView() {
   var myNick = $('arena-my-nickname');
   var mySum = $('arena-my-summary');
   if (myCard) myCard.classList.toggle('con-side', mySide === 'con');
-  if (myNick) myNick.textContent = getNicknameAlias(currentInfo.nickname);
+  if (myNick) myNick.textContent = currentInfo.nickname;
   if (mySum) mySum.textContent = myPayload.summary;
 
   arenaState.opponents = opponents;
@@ -1392,7 +1367,7 @@ function renderArenaCards() {
     meta.className = 'arena-card-meta';
     var author = document.createElement('span');
     author.className = 'arena-card-author';
-    author.textContent = getNicknameAlias(opp.nickname);
+    author.textContent = opp.nickname;
     var badge = document.createElement('span');
     badge.className = 'side-badge';
     setSideBadge(badge, opp.side);
@@ -1445,7 +1420,7 @@ function openArenaModal(opp) {
   var inp = $('arena-modal-input');
   var sub = $('arena-modal-submit');
 
-  if (authorEl) authorEl.textContent = getNicknameAlias(opp.nickname);
+  if (authorEl) authorEl.textContent = opp.nickname;
   if (sideEl) setSideBadge(sideEl, opp.side);
   if (sumEl) sumEl.textContent = opp.summary;
   if (reaEl) reaEl.textContent = opp.reasoning || '';
