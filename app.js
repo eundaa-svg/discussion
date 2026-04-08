@@ -1,4 +1,4 @@
-console.log('[app] === LOADED v_ui1 ===');
+console.log('[app] === LOADED v_fix1 ===');
 
 // === 데모 시드 ===
 var DEMO_SEED = {
@@ -611,14 +611,16 @@ function handleSubmitOpinion() {
   }).then(function(payloads) {
     cachedPayloads = payloads || {};
 
-    var oppSide = currentInfo.side === 'pro' ? 'con' : 'pro';
+    var mySide2 = getMyNormalizedSide();
     var candidates = [];
     for (var name in cachedPayloads) {
       if (name === currentInfo.nickname) continue;
       var p = cachedPayloads[name];
       if (!p || !p.summary) continue;
-      if (p.side !== oppSide) continue;
-      candidates.push({ nickname: name, side: p.side, summary: p.summary, reasoning: p.reasoning });
+      var theirSide2 = typeof p.side === 'string' ? p.side.trim().toLowerCase() : '';
+      if (theirSide2 !== 'pro' && theirSide2 !== 'con') continue;
+      if (theirSide2 === mySide2) continue;
+      candidates.push({ nickname: name, side: theirSide2, summary: p.summary, reasoning: p.reasoning });
     }
 
     if (candidates.length === 0) {
@@ -1192,6 +1194,13 @@ function submitRebuttal(data) {
 }
 
 // === 토론 아레나 ===
+// URL 파라미터 또는 currentInfo.side를 정규화하여 반환 (아레나/설득미션 공용)
+function getMyNormalizedSide() {
+  var urlSide = new URLSearchParams(location.search).get('side');
+  var raw = (urlSide === 'pro' || urlSide === 'con') ? urlSide : currentInfo.side;
+  return typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+}
+
 function renderArenaView() {
   var guard = $('arena-guard');
   var guardText = $('arena-guard-text');
@@ -1202,14 +1211,37 @@ function renderArenaView() {
   var myPayload = cachedPayloads[currentInfo.nickname];
   var hasMyOpinion = !!(myPayload && myPayload.summary);
 
+  // URL 파라미터 우선, 정규화
+  var mySide = getMyNormalizedSide();
+  console.log('[arena] mySide:', mySide, '(url:', new URLSearchParams(location.search).get('side'), ', info:', currentInfo.side, ')');
+
+  if (mySide !== 'pro' && mySide !== 'con') {
+    guard.style.display = 'block';
+    stage.style.display = 'none';
+    if (guardText) guardText.textContent = '진영 정보를 확인할 수 없습니다.';
+    if (guardBtn) guardBtn.style.display = 'none';
+    return;
+  }
+
+  // 반대 진영 수집 (side 정규화 + 엄격 필터)
   var opponents = [];
   for (var name in cachedPayloads) {
     if (name === currentInfo.nickname) continue;
     var p = cachedPayloads[name];
     if (!p || !p.summary) continue;
-    if (p.side === currentInfo.side) continue;
-    opponents.push({ nickname: name, side: p.side, summary: p.summary, reasoning: p.reasoning });
+    var theirSide = typeof p.side === 'string' ? p.side.trim().toLowerCase() : '';
+    if (theirSide !== 'pro' && theirSide !== 'con') {
+      console.warn('[arena] 잘못된 side 값:', name, p.side);
+      continue;
+    }
+    if (theirSide === mySide) {
+      console.log('[arena] 같은 진영 제외:', name, theirSide);
+      continue;
+    }
+    console.log('[arena] 반대 진영 포함:', name, theirSide);
+    opponents.push({ nickname: name, side: theirSide, summary: p.summary, reasoning: p.reasoning });
   }
+  console.log('[arena] 최종 opponents:', opponents.length, '명');
 
   if (!hasMyOpinion) {
     guard.style.display = 'block';
@@ -1232,7 +1264,7 @@ function renderArenaView() {
   var myCard = $('arena-my-card');
   var myNick = $('arena-my-nickname');
   var mySum = $('arena-my-summary');
-  if (myCard) myCard.classList.toggle('con-side', currentInfo.side === 'con');
+  if (myCard) myCard.classList.toggle('con-side', mySide === 'con');
   if (myNick) myNick.textContent = currentInfo.nickname;
   if (mySum) mySum.textContent = myPayload.summary;
 
