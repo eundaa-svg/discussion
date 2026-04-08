@@ -918,6 +918,21 @@ function renderThread(targetAuthor) {
   });
 }
 
+function renderContentWithMentions(container, text) {
+  // @닉네임 패턴을 찾아 .mention span으로 렌더링
+  var parts = text.split(/(@\S+)/g);
+  parts.forEach(function(part) {
+    if (/^@\S+$/.test(part)) {
+      var mention = document.createElement('span');
+      mention.className = 'mention';
+      mention.textContent = part + ' ';
+      container.appendChild(mention);
+    } else if (part.length > 0) {
+      container.appendChild(document.createTextNode(part));
+    }
+  });
+}
+
 function buildThreadNode(entry, rootTargetSide, visualDepth) {
   if (typeof visualDepth !== 'number') visualDepth = Math.min(entry.depth, 2);
   var clampedVisual = Math.min(visualDepth, 2);
@@ -950,19 +965,10 @@ function buildThreadNode(entry, rootTargetSide, visualDepth) {
   head.appendChild(timeSpan);
   wrapper.appendChild(head);
 
-  // 본문 (depth 2 이상 rebuttal이면 @멘션 자동 삽입)
+  // 본문: content 내 @멘션 파싱하여 스타일 적용
   var body = document.createElement('p');
   body.className = 'thread-body';
-  if (entry.depth >= 2 && r.targetType === 'rebuttal') {
-    var parent = findRebuttalById(r.targetId);
-    if (parent && parent.author && parent.author !== r.author) {
-      var mention = document.createElement('span');
-      mention.className = 'mention';
-      mention.textContent = '@' + parent.author + ' ';
-      body.appendChild(mention);
-    }
-  }
-  body.appendChild(document.createTextNode(r.content));
+  renderContentWithMentions(body, r.content);
   wrapper.appendChild(body);
 
   // 답글 버튼 (본인 아닐 때, 깊이 제한 없음)
