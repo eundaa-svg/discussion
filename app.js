@@ -365,6 +365,7 @@ function switchHomeView(view) {
     viewArena.style.display = 'none';
     renderHomeStats();
     renderHotBanner();
+    renderBestDebaters();
     renderHomeList();
   } else {
     viewAll.style.display = 'none';
@@ -430,6 +431,49 @@ function renderHotBanner() {
     var card = document.querySelector('.opinion-card[data-author="' + hotAuthor + '"]');
     if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
+}
+
+function renderBestDebaters() {
+  var el = document.getElementById('best-debaters');
+  if (!el) return;
+
+  // 닉네임별 반론 작성 수 집계
+  var counts = {};
+  for (var name in cachedPayloads) {
+    var p = cachedPayloads[name];
+    if (!p) continue;
+    var cnt = p.rebuttals ? p.rebuttals.length : 0;
+    if (cnt > 0) counts[name] = cnt;
+  }
+
+  var sorted = Object.keys(counts).sort(function(a, b) {
+    return counts[b] - counts[a];
+  });
+
+  var top = sorted.slice(0, 3);
+
+  if (top.length === 0) {
+    el.style.display = 'none';
+    return;
+  }
+
+  var rankEmojis = ['🥇', '🥈', '🥉'];
+  var rankClasses = ['rank-1', 'rank-2', 'rank-3'];
+
+  var itemsHtml = top.map(function(nick, i) {
+    return '<div class="best-debater-item">' +
+      '<span class="best-debater-rank ' + rankClasses[i] + '">' + rankEmojis[i] + '</span>' +
+      '<div class="best-debater-info">' +
+        '<span class="best-debater-name">' + escapeHtml(getAnonName(nick)) + '</span>' +
+        '<span class="best-debater-count">반론 ' + counts[nick] + '건</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  el.style.display = '';
+  el.innerHTML =
+    '<div class="best-debaters-title">🏆 베스트 반론가</div>' +
+    '<div class="best-debaters-list">' + itemsHtml + '</div>';
 }
 
 function getRebuttalCount(author) {

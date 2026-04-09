@@ -56,6 +56,59 @@
     .hot-banner-summary { font-size: 17px; font-weight: 700; margin: 0 0 8px 0; }
     .hot-banner-meta { font-size: 13px; color: #52525b; }
 
+    /* 베스트 반론가 랭킹 */
+    .best-debaters {
+      background: #fff;
+      border: 1px solid #e4e4e7;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+    .best-debaters-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #71717a;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    .best-debaters-list {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .best-debater-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f4f4f5;
+      border-radius: 8px;
+      padding: 8px 14px;
+      flex: 1;
+      min-width: 0;
+    }
+    .best-debater-rank {
+      font-size: 16px;
+      font-weight: 900;
+      min-width: 24px;
+    }
+    .best-debater-rank.rank-1 { color: #f59e0b; }
+    .best-debater-rank.rank-2 { color: #6b7280; }
+    .best-debater-rank.rank-3 { color: #b45309; }
+    .best-debater-info { display: flex; flex-direction: column; min-width: 0; }
+    .best-debater-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #18181b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .best-debater-count {
+      font-size: 12px;
+      color: #71717a;
+      margin-top: 1px;
+    }
+
     /* 홈 컨트롤 */
     .home-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
     .write-btn { background: #18181b; color: #fff; border: none; padding: 12px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; }
@@ -529,6 +582,7 @@
       <div class="home-view" id="view-all">
         <div id="home-stats" class="home-stats"></div>
         <div id="hot-banner" class="hot-banner" style="display:none;"></div>
+        <div id="best-debaters" class="best-debaters" style="display:none;"></div>
         <div class="home-controls">
           <button id="write-btn" class="write-btn">내 의견 쓰기</button>
         </div>
