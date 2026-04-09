@@ -1,5 +1,28 @@
 console.log('[app] === LOADED v_fix1 ===');
 
+// === 익명 번호 시스템 ===
+// 닉네임 → "익명N" 매핑 (글 쓴 순서 기준, cachedPayloads 기반)
+function getAnonName(nickname) {
+  var entries = [];
+  for (var n in cachedPayloads) {
+    var p = cachedPayloads[n];
+    if (p && p.summary) {
+      entries.push({ nickname: n, createdAt: p.createdAt || 0 });
+    }
+  }
+  entries.sort(function(a, b) { return a.createdAt - b.createdAt; });
+
+  for (var i = 0; i < entries.length; i++) {
+    if (entries[i].nickname === nickname) return '익명' + (i + 1);
+  }
+  // cachedPayloads에 없는 경우 해시 기반 고정 번호
+  var hash = 0;
+  for (var j = 0; j < nickname.length; j++) {
+    hash = (hash * 31 + nickname.charCodeAt(j)) & 0xffffffff;
+  }
+  return '익명' + ((Math.abs(hash) % 90) + 10);
+}
+
 // === 데모 시드 ===
 var DEMO_SEED = {
   alice: { side: "con", summary: "축의금은 친밀도에 비례해야 한다", reasoning: "직장 선배라는 이유만으로 10만원을 강요받는 것은 사회 초년생에게 부담입니다.", createdAt: Date.now() - 18000000, rebuttals: [] },
@@ -401,7 +424,7 @@ function renderHotBanner() {
   el.innerHTML =
     '<div class="hot-banner-label" style="color:' + (isPro ? '#1d4ed8' : '#b91c1c') + '">댓글창 지금 불타는 중🔥</div>' +
     '<p class="hot-banner-summary">' + escapeHtml(p.summary) + '</p>' +
-    '<div class="hot-banner-meta">' + escapeHtml(hotAuthor) + ' · 반론 ' + hotCount + '건</div>';
+    '<div class="hot-banner-meta">' + escapeHtml(getAnonName(hotAuthor)) + ' · 반론 ' + hotCount + '건</div>';
 
   el.onclick = function() {
     var card = document.querySelector('.opinion-card[data-author="' + hotAuthor + '"]');
@@ -495,7 +518,7 @@ function buildOpinionCard(it) {
   header.className = 'card-header';
   var authorEl = document.createElement('span');
   authorEl.className = 'card-author';
-  authorEl.textContent = it.author;
+  authorEl.textContent = getAnonName(it.author);
   header.appendChild(authorEl);
   if (it.author === currentInfo.nickname) {
     var meBadge = document.createElement('span');
@@ -585,7 +608,7 @@ function toggleCardReplyForm(cardEl, targetAuthor) {
   var sub = form.querySelector('.submit-btn');
 
   // @멘션 자동 삽입
-  var prefix = '@' + targetAuthor + ' ';
+  var prefix = '@' + getAnonName(targetAuthor) + ' ';
   ta.value = prefix;
   ta.setSelectionRange(prefix.length, prefix.length);
   sub.disabled = ta.value.trim().length === 0;
@@ -775,13 +798,13 @@ function enterPersuadeScreen(opp) {
   var reaEl = document.getElementById('persuade-reasoning');
   var inp = document.getElementById('persuade-input');
   var subBtn = document.getElementById('persuade-submit');
-  if (authEl) authEl.textContent = opp.nickname;
+  if (authEl) authEl.textContent = getAnonName(opp.nickname);
   if (sideEl) setSideBadge(sideEl, opp.side);
   if (sumEl) sumEl.textContent = opp.summary || '';
   if (reaEl) reaEl.textContent = opp.reasoning || '';
   if (inp) {
     inp.value = '';
-    inp.placeholder = opp.nickname + '에게 반론을 남겨보세요';
+    inp.placeholder = getAnonName(opp.nickname) + '에게 반론을 남겨보세요';
     inp.oninput = function() { if (subBtn) subBtn.disabled = inp.value.trim().length === 0; };
     if (subBtn) subBtn.disabled = true;
   }
@@ -802,8 +825,8 @@ function handleSubmitPersuade() {
 
   var opp = currentPersuadeOpponent;
   // 사용자가 직접 @멘션을 안 달았으면 자동으로 앞에 붙여 저장
-  var mentionPrefix = '@' + opp.nickname + ' ';
-  var contentToSave = text.trimStart().toLowerCase().indexOf('@' + opp.nickname.toLowerCase()) === 0
+  var mentionPrefix = '@' + getAnonName(opp.nickname) + ' ';
+  var contentToSave = text.trimStart().toLowerCase().indexOf('@' + getAnonName(opp.nickname).toLowerCase()) === 0
     ? text
     : mentionPrefix + text;
 
@@ -948,7 +971,7 @@ function buildThreadNode(entry, rootTargetSide, visualDepth) {
   head.className = 'thread-head';
   var authorSpan = document.createElement('span');
   authorSpan.className = 'author';
-  authorSpan.textContent = r.author;
+  authorSpan.textContent = getAnonName(r.author);
   head.appendChild(authorSpan);
   if (r.author === currentInfo.nickname) {
     var meBadge = document.createElement('span');
@@ -980,7 +1003,7 @@ function buildThreadNode(entry, rootTargetSide, visualDepth) {
       if (!alreadyMentioned) {
         var autoMention = document.createElement('span');
         autoMention.className = 'mention';
-        autoMention.textContent = '@' + parent.author + ' ';
+        autoMention.textContent = '@' + getAnonName(parent.author) + ' ';
         body.appendChild(autoMention);
       }
     }
@@ -1030,7 +1053,7 @@ function toggleInlineReply(parentEl, parentRebuttal) {
   var sub = form.querySelector('.submit-btn');
 
   // @멘션 자동 삽입
-  var prefix = '@' + parentRebuttal.author + ' ';
+  var prefix = '@' + getAnonName(parentRebuttal.author) + ' ';
   ta.value = prefix;
   ta.setSelectionRange(prefix.length, prefix.length);
   sub.disabled = ta.value.trim().length === 0;
@@ -1081,7 +1104,7 @@ function renderRebuttalsList(targetAuthor) {
 
     var authorSpan = document.createElement('span');
     authorSpan.className = 'author';
-    authorSpan.textContent = r.author;
+    authorSpan.textContent = getAnonName(r.author);
     if (r.author === currentInfo.nickname) {
       var meBadgeReb = document.createElement('span');
       meBadgeReb.className = 'me-badge';
@@ -1336,7 +1359,7 @@ function renderArenaView() {
   var myNick = $('arena-my-nickname');
   var mySum = $('arena-my-summary');
   if (myCard) myCard.classList.toggle('con-side', mySide === 'con');
-  if (myNick) myNick.textContent = currentInfo.nickname;
+  if (myNick) myNick.textContent = getAnonName(currentInfo.nickname);
   if (mySum) mySum.textContent = myPayload.summary;
 
   arenaState.opponents = opponents;
@@ -1374,7 +1397,7 @@ function renderArenaCards() {
     meta.className = 'arena-card-meta';
     var author = document.createElement('span');
     author.className = 'arena-card-author';
-    author.textContent = opp.nickname;
+    author.textContent = getAnonName(opp.nickname);
     var badge = document.createElement('span');
     badge.className = 'side-badge';
     setSideBadge(badge, opp.side);
@@ -1427,7 +1450,7 @@ function openArenaModal(opp) {
   var inp = $('arena-modal-input');
   var sub = $('arena-modal-submit');
 
-  if (authorEl) authorEl.textContent = opp.nickname;
+  if (authorEl) authorEl.textContent = getAnonName(opp.nickname);
   if (sideEl) setSideBadge(sideEl, opp.side);
   if (sumEl) sumEl.textContent = opp.summary;
   if (reaEl) reaEl.textContent = opp.reasoning || '';
