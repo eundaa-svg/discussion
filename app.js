@@ -943,13 +943,18 @@ function renderThread(targetAuthor) {
 }
 
 function renderContentWithMentions(container, text) {
-  // @닉네임 패턴을 찾아 .mention span으로 렌더링
+  // @닉네임 패턴을 찾아 .mention span으로 렌더링 (실제 닉네임 → 익명 이름 변환)
   var parts = text.split(/(@\S+)/g);
   parts.forEach(function(part) {
     if (/^@\S+$/.test(part)) {
+      var rawNick = part.slice(1); // @ 제거
+      // cachedPayloads에 해당 닉네임이 있으면 익명으로 변환, 없으면 그대로
+      var displayName = cachedPayloads[rawNick]
+        ? '@' + getAnonName(rawNick)
+        : part;
       var mention = document.createElement('span');
       mention.className = 'mention';
-      mention.textContent = part + ' ';
+      mention.textContent = displayName + ' ';
       container.appendChild(mention);
     } else if (part.length > 0) {
       container.appendChild(document.createTextNode(part));
