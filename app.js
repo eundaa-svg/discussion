@@ -273,6 +273,86 @@ window.DebateCore.onReady(function(info) {
 
   bindGlobalEvents();
   loadAndShowHome();
+
+  // === 실시간 반론 알림 ===
+  var _prevMyRebuttalCount = 0;
+  var _notifTimer = null;
+
+  function showNotifBanner(msg, targetAuthor) {
+    var banner = document.getElementById('notif-banner');
+    var text = document.getElementById('notif-text');
+    var closeBtn = document.getElementById('notif-close');
+    if (!banner || !text) return;
+
+    text.textContent = msg;
+    banner.style.display = 'flex';
+
+    banner.onclick = function(e) {
+      if (e.target === closeBtn) return;
+      banner.style.display = 'none';
+      if (targetAuthor) {
+        if (typeof switchHomeView === 'function') switchHomeView('all');
+        setTimeout(function() {
+          var card = document.querySelector('.opinion-card[data-author="' + targetAuthor + '"]');
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      }
+    };
+
+    closeBtn.onclick = function(e) {
+      e.stopPropagation();
+      banner.style.display = 'none';
+    };
+
+    if (_notifTimer) clearTimeout(_notifTimer);
+    _notifTimer = setTimeout(function() {
+      banner.style.display = 'none';
+    }, 8000);
+  }
+
+  function countMyRebuttals(payloads) {
+    var count = 0;
+    var myNick = currentInfo.nickname;
+    for (var name in payloads) {
+      if (name === myNick) continue;
+      var p = payloads[name];
+      if (!p || !p.rebuttals) continue;
+      for (var i = 0; i < p.rebuttals.length; i++) {
+        var r = p.rebuttals[i];
+        if (r.targetType === 'opinion' && r.targetAuthor === myNick) count++;
+      }
+    }
+    return count;
+  }
+
+  // onPayloadsChange로 실시간 감지 (README API 준수)
+  currentInfo.onPayloadsChange(function(payloads) {
+    if (!payloads) return;
+    cachedPayloads = payloads;
+
+    var newCount = countMyRebuttals(payloads);
+    var diff = newCount - _prevMyRebuttalCount;
+
+    if (_prevMyRebuttalCount > 0 && diff > 0) {
+      var msg = '💬 내 의견에 새로운 반론이 ' + diff + '건 달렸습니다. 확인해보세요!';
+      showNotifBanner(msg, currentInfo.nickname);
+    }
+
+    _prevMyRebuttalCount = newCount;
+
+    var homeScreen = document.getElementById('screen-home');
+    if (homeScreen && homeScreen.classList.contains('active')) {
+      renderHomeStats();
+      renderHotBanner();
+      renderBestDebaters();
+      renderHomeList();
+    }
+  });
+
+  // 초기 반론 수 설정 (알림 오발동 방지)
+  loadPayloadsWithSeed(currentInfo).then(function(payloads) {
+    _prevMyRebuttalCount = countMyRebuttals(payloads || {});
+  });
 });
 
 // === 글로벌 이벤트 ===

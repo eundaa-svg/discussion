@@ -407,6 +407,37 @@
     /* 상태 */
     .status-screen { text-align: center; padding: 80px 20px; color: #71717a; }
 
+    /* 상단 알림 배너 */
+    .notif-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 9999;
+      background: #18181b;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      animation: notif-slide-down 0.3s ease;
+    }
+    @keyframes notif-slide-down {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(0); }
+    }
+    .notif-banner #notif-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 0 0 16px;
+      opacity: 0.7;
+    }
+    .notif-banner #notif-close:hover { opacity: 1; }
+
     /* 토스트 */
     .toast {
       position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
@@ -724,6 +755,11 @@
     </div>
   </div>
 
+
+  <div id="notif-banner" class="notif-banner" style="display:none;">
+    <span id="notif-text"></span>
+    <button id="notif-close">✕</button>
+  </div>
 
   <div id="toast" class="toast"></div>
 
