@@ -3,24 +3,41 @@ console.log('[app] === LOADED v_fix1 ===');
 // === 익명 번호 시스템 ===
 // 닉네임 → "익명N" 매핑 (글 쓴 순서 기준, cachedPayloads 기반)
 function getAnonName(nickname) {
-  var entries = [];
+  // 의견 작성자 + 반론 작성자 모두 수집하여 첫 등장 시각 기준 정렬
+  var firstSeen = {};
+
   for (var n in cachedPayloads) {
     var p = cachedPayloads[n];
-    if (p && p.summary) {
-      entries.push({ nickname: n, createdAt: p.createdAt || 0 });
+    if (!p) continue;
+    // 의견 작성 시각
+    if (p.summary && p.createdAt) {
+      if (firstSeen[n] === undefined || p.createdAt < firstSeen[n]) {
+        firstSeen[n] = p.createdAt;
+      }
+    }
+    // 반론 작성 시각
+    if (p.rebuttals) {
+      for (var i = 0; i < p.rebuttals.length; i++) {
+        var r = p.rebuttals[i];
+        var ts = r.timestamp || 0;
+        if (firstSeen[n] === undefined || ts < firstSeen[n]) {
+          firstSeen[n] = ts;
+        }
+      }
     }
   }
-  entries.sort(function(a, b) { return a.createdAt - b.createdAt; });
 
-  for (var i = 0; i < entries.length; i++) {
-    if (entries[i].nickname === nickname) return '익명' + (i + 1);
+  var entries = Object.keys(firstSeen).map(function(n) {
+    return { nickname: n, firstSeen: firstSeen[n] };
+  });
+  entries.sort(function(a, b) { return a.firstSeen - b.firstSeen; });
+
+  for (var j = 0; j < entries.length; j++) {
+    if (entries[j].nickname === nickname) return '익명' + (j + 1);
   }
-  // cachedPayloads에 없는 경우 해시 기반 고정 번호
-  var hash = 0;
-  for (var j = 0; j < nickname.length; j++) {
-    hash = (hash * 31 + nickname.charCodeAt(j)) & 0xffffffff;
-  }
-  return '익명' + ((Math.abs(hash) % 90) + 10);
+
+  // 그래도 없으면 목록 맨 끝 번호로 추가
+  return '익명' + (entries.length + 1);
 }
 
 // === 데모 시드 ===
