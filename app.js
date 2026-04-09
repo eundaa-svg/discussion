@@ -268,90 +268,129 @@ window.DebateCore.onReady(function(info) {
   // 아키텍트/아젠다세터는 읽기 전용 (의견 쓰기 버튼 숨김)
   if (info.role !== 'participant') {
     var writeBtn = document.getElementById('write-btn');
-    if (writeBtn) writeBtn.style.display = 'none';
+    if (writeBtn) {
+      writeBtn.disabled = true;
+      writeBtn.textContent = '관람 중';
+    }
   }
 
   bindGlobalEvents();
   loadAndShowHome();
 
+  // =============================================
   // === 반론 알림 시스템 ===
-  var _prevMyRebuttalCount = -1; // -1: 초기화 전
-  var _notifTimer = null;
-  var _pollTimer = null;
+  // 실제 모드: onPayloadsChange (Firestore 실시간)
+  // 데모 모드: setInterval 5초 폴링
+  // =============================================
 
-  function countMyRebuttals(payloads) {
+  var _notifRebuttalCount = -1; // -1 = 초기화 전 (오발동 방지)
+  var _notifAutoTimer = null;
+  var _notifPollTimer = null;
+
+  function _countRebuttalsOnMe(payloads) {
+    // 내 의견(currentInfo.nickname)에 달린 반론 총 수 집계
     var count = 0;
     var myNick = currentInfo.nickname;
-    for (var name in payloads) {
-      if (name === myNick) continue;
-      var p = payloads[name];
+    for (var n in payloads) {
+      if (n === myNick) continue;
+      var p = payloads[n];
       if (!p || !p.rebuttals) continue;
       for (var i = 0; i < p.rebuttals.length; i++) {
         var r = p.rebuttals[i];
-        if (r.targetType === 'opinion' && r.targetAuthor === myNick) count++;
+        if (r && r.targetType === 'opinion' && r.targetAuthor === myNick) {
+          count++;
+        }
       }
     }
     return count;
   }
 
-  function showNotifBanner(msg) {
+  function _showNotifBanner(msg) {
     var banner = document.getElementById('notif-banner');
     var text = document.getElementById('notif-text');
-    var closeBtn = document.getElementById('notif-close');
     if (!banner || !text) return;
+
     text.textContent = msg;
-    banner.style.display = 'flex';
+
+    // 배너 클릭 시 내 의견 카드로 스크롤
     banner.onclick = function(e) {
-      if (e.target === closeBtn) return;
+      if (e.target && e.target.id === 'notif-close') return;
       banner.style.display = 'none';
       if (typeof switchHomeView === 'function') switchHomeView('all');
       setTimeout(function() {
-        var card = document.querySelector('.opinion-card[data-author="' + currentInfo.nickname + '"]');
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 300);
+        var myCard = document.querySelector(
+          '.opinion-card[data-author="' + currentInfo.nickname + '"]'
+        );
+        if (myCard) myCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
     };
-    closeBtn.onclick = function(e) {
-      e.stopPropagation();
-      banner.style.display = 'none';
-    };
-    if (_notifTimer) clearTimeout(_notifTimer);
-    _notifTimer = setTimeout(function() { banner.style.display = 'none'; }, 8000);
+
+    // 애니메이션 재실행을 위해 display 토글
+    banner.style.display = 'none';
+    banner.style.animation = 'none';
+    setTimeout(function() {
+      banner.style.display = 'flex';
+      banner.style.animation = '';
+    }, 10);
+
+    // 10초 후 자동 닫기
+    if (_notifAutoTimer) clearTimeout(_notifAutoTimer);
+    _notifAutoTimer = setTimeout(function() {
+      if (banner) banner.style.display = 'none';
+    }, 10000);
   }
 
-  function checkNewRebuttals(payloads) {
+  function _checkAndNotify(payloads) {
     if (!payloads) return;
-    var newCount = countMyRebuttals(payloads);
-    if (_prevMyRebuttalCount === -1) {
-      _prevMyRebuttalCount = newCount;
+    var newCount = _countRebuttalsOnMe(payloads);
+
+    // 초기화 단계: 기준값만 설정, 알림 없음
+    if (_notifRebuttalCount === -1) {
+      _notifRebuttalCount = newCount;
       return;
     }
-    var diff = newCount - _prevMyRebuttalCount;
+
+    var diff = newCount - _notifRebuttalCount;
     if (diff > 0) {
-      showNotifBanner('💬 내 의견에 새로운 반론이 ' + diff + '건 달렸습니다!');
-      _prevMyRebuttalCount = newCount;
-      var homeScreen = document.getElementById('screen-home');
-      if (homeScreen && homeScreen.classList.contains('active')) {
-        loadAndShowHome();
-      }
+      _notifRebuttalCount = newCount;
+      var msg = '💬 내 의견에 새로운 반론이 ' + diff + '건 달렸습니다. 확인해보세요!';
+      _showNotifBanner(msg);
     }
   }
 
+  // 초기 반론 수 기준값 설정 (오발동 방지)
+  loadPayloadsWithSeed(currentInfo).then(function(initPayloads) {
+    _notifRebuttalCount = _countRebuttalsOnMe(initPayloads || {});
+    console.log('[notif] 초기 반론 수 기준값:', _notifRebuttalCount);
+  });
+
   if (isDemoMode()) {
-    // 데모 모드: 5초마다 폴링 (onPayloadsChange는 Firebase 연결 없어 동작 안 함)
-    loadPayloadsWithSeed(currentInfo).then(function(payloads) {
-      _prevMyRebuttalCount = countMyRebuttals(payloads || {});
-    });
-    _pollTimer = setInterval(function() {
+    // 데모 모드: Firebase 없으므로 5초마다 폴링
+    console.log('[notif] 데모 모드 - 5초 폴링 시작');
+    _notifPollTimer = setInterval(function() {
       loadPayloadsWithSeed(currentInfo).then(function(payloads) {
-        checkNewRebuttals(payloads);
+        _checkAndNotify(payloads);
+      }).catch(function(err) {
+        console.warn('[notif] 폴링 실패:', err);
       });
     }, 5000);
   } else {
-    // 실제 모드: onPayloadsChange 실시간 감지 (README API 준수)
+    // 실제 모드: onPayloadsChange 실시간 감지 (README API)
+    console.log('[notif] 실제 모드 - onPayloadsChange 등록');
     currentInfo.onPayloadsChange(function(payloads) {
-      checkNewRebuttals(payloads);
+      _checkAndNotify(payloads);
+      // 홈 화면이 열려있으면 리렌더
+      var homeScreen = document.getElementById('screen-home');
+      if (homeScreen && homeScreen.classList.contains('active')) {
+        cachedPayloads = payloads || {};
+        if (typeof renderHomeStats === 'function') renderHomeStats();
+        if (typeof renderHotBanner === 'function') renderHotBanner();
+        if (typeof renderBestDebaters === 'function') renderBestDebaters();
+        if (typeof renderHomeList === 'function') renderHomeList();
+      }
     });
   }
+  // =============================================
 });
 
 // === 글로벌 이벤트 ===
