@@ -255,9 +255,9 @@ window.DebateCore.onReady(function(info) {
     return;
   }
 
-  if (!isDemoMode() && info.status !== 'active') {
+  if (!isDemoMode() && info.status === 'pending') {
     var s2 = $('screen-status');
-    if (s2) s2.innerHTML = '<div class="status-screen">토론이 진행 중이 아닙니다.</div>';
+    if (s2) s2.innerHTML = '<div class="status-screen">토론이 아직 시작되지 않았습니다.</div>';
     showScreen('screen-status');
     return;
   }
